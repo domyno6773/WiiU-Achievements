@@ -2,6 +2,21 @@
 
 Applicazione Windows indipendente, scritta da zero. Primo gioco: **The Legend of Zelda: The Wind Waker HD**, edizione EUR v0, su **Cemu 2.6**.
 
+## Repository e copia locale
+
+La repository di riferimento è [hoffo1987/WiiU-Achievements](https://github.com/hoffo1987/WiiU-Achievements).
+Usa un clone Git per proseguire lo sviluppo; gli archivi delle alpha precedenti
+sono fotografie storiche e possono contenere sorgenti meno recenti.
+
+Prima di lavorare esegui `git pull --ff-only`. Dopo le modifiche esegui build e
+test indicati sotto, controlla `git diff` e `git status`, quindi crea un commit
+e invialo con `git push`. Se il pull segnala una divergenza, integra le modifiche
+senza sovrascrivere la cronologia con un force push.
+
+`data/` rimane locale: contiene impostazioni e progressi e non viene pubblicata.
+L'eseguibile si ricompila con `build.ps1`; gli archivi da distribuire si generano
+con `package.ps1`. Conserva il font e la relativa licenza presenti nella repo.
+
 ![Finestra principale](docs/screenshots/main.png)
 
 **Novità dell’alpha 0.3:** sezione **Giochi** predisposta per nuovi titoli,

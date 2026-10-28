@@ -1,5 +1,14 @@
 # Validation record and reproduction
 
+## Local checkout verification — 2026-10-28
+
+The current main branch was cloned into a dedicated local development folder on
+the original user's Windows PC. The official C# 5/x64 build succeeded, followed
+by all 50 core/Win32 checks and all 22 UI checks. Existing local progress was
+copied separately into the ignored `data/` directory; no personal state was added
+to Git. The older alpha 0.1 workspace was preserved as a historical copy.
+This run did not repeat live-game unlock or Cemu restart testing for alpha 0.3.
+
 Date of initial live verification: **2026-10-28**, Europe/Rome.
 
 ## Alpha 0.3 system and catalog checks (2026-10-28)
