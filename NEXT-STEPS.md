@@ -1,8 +1,8 @@
 # Prossimo ciclo di sviluppo
 
-La base funziona sulla configurazione EUR confermata. Per estendere il set servono eventi osservati durante il gioco, non soltanto indirizzi trovati online.
+Alpha 0.3 aggiunge catalogo giochi, adattatori per profilo, pausa/ripresa, stati di verifica condivisi e salvataggio atomico degli sblocchi simultanei. Il set resta di dieci obiettivi; ID e progressi sono conservati. La base originale ha evidenza sulla configurazione EUR confermata. Per estendere il set servono eventi osservati durante il gioco, non soltanto indirizzi trovati online.
 
-0. **Interfaccia alpha 0.2 su Windows:** ricompilare con `build.ps1` ed eseguire i test. Poi controllare la demo e la notifica sopra Cemu, anche a schermo intero, il jingle, i tasti e la scala DPI. L'interfaccia è stata verificata solo su Linux/Mono.
+0. **Alpha 0.3 sul PC con Cemu:** ricompilare con `build.ps1` ed eseguire i test. Poi controllare la demo e la notifica sopra Cemu, anche a schermo intero, il jingle, i tasti e la scala DPI. Controllare anche Giochi, pausa prima del caricamento, ripresa senza sblocchi retroattivi e una nuova soglia raggiunta dopo tre campioni sotto soglia. Le prove cloud non sostituiscono la sessione reale.
 1. **Stato della partita:** identificare menu iniziale, caricamento, slot selezionato, modalità normale/eroe e sessione giocabile. Questa è una priorità prima di attribuire obiettivi di storia.
 2. **Inventario iniziale:** acquisizione di cannocchiale, spada e scudo. Confrontare campioni prima e dopo ogni acquisizione, quindi verificare che i flag rimangano coerenti nei menu, nei cambi di area e dopo un riavvio.
 3. **Progressione:** vela, Wind Waker, strumenti dei dungeon e boss, con condizioni che distinguano l'evento appena avvenuto dal caricamento di dati già completati.

@@ -12,7 +12,7 @@ $resources = @('Nunito-Regular.ttf', 'Nunito-Bold.ttf', 'Nunito-ExtraBold.ttf') 
     if (-not (Test-Path -LiteralPath $font)) { throw ('Font mancante: ' + $font) }
     '/resource:' + $font + ',WiiUAchievements.Fonts.' + $_
 }
-& $compiler /nologo /target:winexe /platform:x64 /optimize+ /utf8output /r:System.Xml.Linq.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:Accessibility.dll $resources "/out:$output\WiiUAchievements.exe" $sources
+& $compiler /nologo /langversion:5 /target:winexe /platform:x64 /optimize+ /utf8output /r:System.Xml.Linq.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:Accessibility.dll $resources "/out:$output\WiiUAchievements.exe" $sources
 if ($LASTEXITCODE -ne 0) { throw 'Compilazione applicazione fallita.' }
 if ($output.TrimEnd('\') -ne $PSScriptRoot.TrimEnd('\')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'achievements.xml') -Destination $output -Force

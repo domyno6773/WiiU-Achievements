@@ -21,8 +21,20 @@ custom-drawn, animated interface in the style of the Wii U system menus. It
 also adds a layered, click-through unlock popup and a synthesised chime. Session,
 engine, memory and persistence semantics are unchanged. The achievement IDs and
 set revision are unchanged too. See `docs/UI.md`. This UI was built and
-visually checked only on Linux with Mono (see `docs/VALIDATION.md`). **It has not
-yet been run on Windows.
+visually checked only on Linux with Mono (see `docs/VALIDATION.md`). **It had not
+yet been run on Windows at that handoff.**
+
+**Alpha 0.3 (2026-10-28)** adds a game catalog, exact profile/reader routing,
+manual recording pause/resume, centralized per-rule evaluation status, stable
+below-threshold arming and atomic batch unlock persistence. The ten original
+rules, IDs, XML path, progress identity and revision are unchanged. No game
+memory mappings or new achievements were added. See `docs/GAMES.md` and the
+alpha 0.3 record in `docs/VALIDATION.md` for current evidence.
+
+The alpha 0.3 code also passed Windows CI: official C# 5/.NET Framework x64 build,
+50 core/Win32 checks, 22 UI checks, and a 47-file verified package. The workflow
+artifacts contain a Windows-built EXE. This does not replace live Cemu tests on
+the user's PC. See the linked run in `docs/VALIDATION.md`.
 
 The first live unlock, **Primi spiccioli** at 10 rupees, was confirmed by the user
 on 2026-10-28. It remained unlocked after closing and reopening this application.
@@ -31,8 +43,8 @@ the limits of what has been tested.
 
 ## Supported configuration
 
-- OS/runtime: Windows x64, .NET Framework 4.x; the current build is tested on the
-  user's Windows PC. Windows integration cannot run natively on Linux/macOS.
+- OS/runtime: Windows x64, .NET Framework 4.x; the original alpha 0.1 was tested on the
+  user's Windows PC. Later build evidence is recorded in `docs/VALIDATION.md`. Windows integration cannot run natively on Linux/macOS.
 - Emulator: **Cemu 2.6**. The application deliberately rejects other versions.
 - Game: **EUR v0**, Title ID **0005000010143600**, RPX hash **cdc68acd**.
 - No game enhancements were enabled in the observed session; language was English.
@@ -85,6 +97,8 @@ Roaming/Local AppData Cemu directories.
 Source entry points:
 
 - `src/Program.cs`: GUI entry point and single-instance guard per app folder.
+- `src/GameCatalog.cs`: definitions, exact profiles and per-game memory adapters.
+- `src/MainForm.Library.cs`: catalog rendering and navigation using the existing theme.
 - `src/MainForm.cs`: attach sequence, 100 ms sampling timer, demo, settings, toast queue.
 - `src/MainForm.Ui.cs`: custom-drawn window, layout, animations, input, accessibility.
 - `src/Theme.cs`, `src/Banner.cs`: palette, embedded Nunito font, vector icons/medals, sea banner.
@@ -98,18 +112,21 @@ Source entry points:
 
 ## Recommended next task
 
-**First, on Windows, validate the alpha 0.2 interface.** Run `build.ps1` and
+**Next, on the real PC, validate alpha 0.3 with Cemu.** Run `build.ps1` and
 `tests\run.ps1`, then start `--demo`. Check:
 
 - fonts, layout and DPI;
 - the layered popup over Cemu, including in fullscreen;
 - the chime, the keyboard navigation and screen-reader names.
 
-Record the results in `docs/VALIDATION.md`. The shipped EXE was compiled with
-Mono `mcs`, so rebuild it with `build.ps1`.
+Also check **Giochi**, **Pausa / Riprendi**, a below-threshold period of at least
+three samples and a subsequent live crossing, persistence and reconnects. Record
+results in `docs/VALIDATION.md`. The committed alpha 0.2 ZIP is a historical
+artifact; use `build.ps1` or a successful alpha 0.3 CI artifact for current code.
 
 **Distinguish active gameplay, menus, loading, and save slots before adding story
-achievements.** The current app reads persistent save values without proving
+achievements.** Manual pause/resume now creates an explicit recording boundary, but the current
+app still reads persistent save values without proving
 that Link is controllable. Loading a different save can be misread as progress.
 
 Then validate initial item acquisition (telescope, sword, shield) with before/after
@@ -127,6 +144,11 @@ Ask them to open the supported game in Cemu, describe the current game state,
 and perform a precise action when needed. The absolute install path, current PID,
 and host base are local session details, not prerequisites for understanding the
 source. Do not request ROM uploads, console keys, passwords, or full memory dumps.
+
+The portable engine suite runs with `bash tests/run.sh` on Mono. Windows
+`tests/run.ps1` retains the native process fixture; `tests/run-ui.ps1` exercises
+the UI in an isolated directory. GitHub Actions runs both Windows suites and
+packages the application. Do not equate synthetic fixture/UI checks to Cemu tests.
 
 For a remote AI without access to the PC, work on code, synthetic tests, and
 documented hypotheses. Leave real-game validation explicitly pending.

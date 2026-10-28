@@ -1,4 +1,4 @@
-# User interface (alpha 0.2)
+# User interface (alpha 0.3)
 
 The window and the unlock popup are custom-drawn WinForms surfaces styled after
 the light Wii U system menus: a pale striped backdrop, white rounded cards, pill
@@ -24,8 +24,9 @@ cel-shaded sea banner for the game.
 
 | File | Responsibility |
 | --- | --- |
-| `src/MainForm.cs` | Session logic: connect, demo, sampling, settings, toast queue. Same semantics as alpha 0.1. |
+| `src/MainForm.cs` | Session logic: connect, demo, sampling, settings, toast queue. Catalog/profile routing, recording pause/resume and engine state updates. |
 | `src/MainForm.Ui.cs` | Layout, painting, animation timer, mouse/keyboard input and accessibility of the main window. |
+| `src/MainForm.Library.cs` | Game catalog using the same rounded cards, sea artwork and input widgets. |
 | `src/Theme.cs` | Palette, fonts, easing, text helpers, rounded shapes, shadows, cursor and every vector icon/medal. `Art` maps a rule to its medal. |
 | `src/Banner.cs` | `OceanBanner`: cached sky layer plus animated clouds, swell rows, foam and sparkles. |
 | `src/Notification.cs` | `ToastForm` unlock popup, `Layered` (UpdateLayeredWindow) and `Chime`. |
@@ -46,7 +47,8 @@ cel-shaded sea banner for the game.
   moves. Ambient motion (banner sea, status-dot pulse, focus pulse) runs only while
   this window is the active window and the setting is enabled. It pauses while
   the player is in Cemu, so it uses no CPU then.
-- The 100 ms sampling timer and the achievement engine are unchanged.
+- The sampling timer remains 100 ms. Pause stops it; resume establishes a new
+  baseline. Per-rule confirmation and blocked states come directly from the engine.
 
 ## Achievement visuals
 
@@ -64,14 +66,32 @@ Tile footer states:
 - **Unlocked:** local date and time.
 - **No data:** "Da sbloccare".
 - **Live below threshold:** progress bar and value.
-- **At or above threshold during the 3-sample confirmation:** "Verifica…".
-- **At or above threshold since connection:** "Soglia già superata al
-  collegamento". The engine never awards existing progress. This display state
-  is mirrored in `aboveSinceStart`, which the UI tracks itself. It does not read
-  engine internals.
+- **Baseline settling below threshold:** "Sincronizzazione…".
+- **At or above threshold during confirmation:** "Verifica 1/3", then "Verifica 2/3".
+- **At or above threshold without a stable lower baseline:** "Soglia già raggiunta
+  all’avvio". These states come from `AchievementEngine.Status`; no duplicate
+  baseline logic lives in the interface.
+- **Paused:** "Registrazione in pausa" for locked objectives; saved objectives
+  keep their date, points and medal.
 
 An unlock plays a 1.8 s celebration on its tile: medal pop, rays, sparkles, a
 shine sweep and a gold edge. The ring and counters also animate.
+
+## Game catalog and recording pause
+
+**Giochi** in the top bar, or **G**, opens a separate catalog view. The existing
+main screen, theme, Nunito fonts, sea artwork, medals and popup are preserved.
+The catalog shares the widget, focus and accessibility infrastructure, including
+disabled states for unavailable titles. It scrolls when further rows are added.
+See `GAMES.md` for the adapter/registration boundary.
+
+While attached, **Pausa / Riprendi** replaces the disconnected-only **Prova demo**
+button in the same bottom-bar space. **P** operates it from the objectives view.
+The program explicitly says the game continues during recording pause. Catalog
+navigation does not alter recording state. **B / Esc** closes the top surface
+(settings, detail, drawer) and then returns from the catalog.
+
+![Paused recording](screenshots/paused.png)
 
 ## Unlock popup
 
@@ -111,7 +131,8 @@ The status text is mirrored in the form's `AccessibleDescription`.
 
 ## Settings
 
-`data/settings.xml` gains two optional elements: `<sound>` and `<ambient>`, both
+`data/settings.xml` remembers the selected catalog ID in `<game>` and keeps the
+two optional UI elements: `<sound>` and `<ambient>`, both
 `true`/`false`. Older files without them load with both enabled. The settings
 panel saves immediately when a toggle changes. The Cemu path and profile remain
 read-only while a session or the demo is running. Progress identity and the
@@ -119,6 +140,7 @@ achievement set revision (`wwhd-alpha-1`) are unchanged.
 
 ## Developer aids
 
+- `tests/run-ui.ps1`: isolated no-Cemu UI smoke suite and full/minimum-size PNGs.
 - `--preview=<png>`: renders the main window after 1.2 s, then exits. It uses
   the same `Render()` path, not a screen grab.
 - `--preview-toast=<png>`: renders one popup frame with transparency, then exits.

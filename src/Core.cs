@@ -14,12 +14,18 @@ namespace WiiUAchievements
     {
         public int Rupees, Health, MaxHealth;
         public DateTime Utc;
+        public void Validate()
+        {
+            new Observation { MaxHealth = MaxHealth, Health = Health, Rupees = Rupees }.Validate();
+            if (Utc.Kind != DateTimeKind.Utc || Utc == DateTime.MinValue)
+                throw new ArgumentException("Il campione deve avere un timestamp UTC valido.");
+        }
         public static int U16(byte[] bytes, int offset) { return (bytes[offset] << 8) | bytes[offset + 1]; }
         public static GameSnapshot Parse(byte[] bytes)
         {
             if (bytes == null || bytes.Length < 6) throw new InvalidDataException("Campione di memoria incompleto.");
             var s = new GameSnapshot { MaxHealth = U16(bytes, 0), Health = U16(bytes, 2), Rupees = U16(bytes, 4), Utc = DateTime.UtcNow };
-            new Observation { MaxHealth = s.MaxHealth, Health = s.Health, Rupees = s.Rupees }.Validate();
+            s.Validate();
             return s;
         }
         public int Value(string field)
@@ -44,18 +50,34 @@ namespace WiiUAchievements
         public const string Revision = "wwhd-alpha-1";
         public static List<Achievement> Load(string path)
         {
+            return Load(path, Revision);
+        }
+        public static List<Achievement> Load(string path, string revision)
+        {
             var doc = SafeXml.Load(path);
-            if (doc.Root == null || doc.Root.Name != "achievement-set" || (string)doc.Root.Attribute("revision") != Revision)
+            if (String.IsNullOrWhiteSpace(revision) || doc.Root == null || doc.Root.Name != "achievement-set" || (string)doc.Root.Attribute("revision") != revision)
                 throw new InvalidDataException("Set achievement incompatibile.");
+            if (doc.Root.Elements().Any(x => x.Name != "achievement"))
+                throw new InvalidDataException("Elemento sconosciuto nel set achievement.");
             var results = new List<Achievement>();
             foreach (var x in doc.Root.Elements("achievement"))
             {
+                string[] attributes = { "id", "title", "description", "field", "threshold", "points" };
+                if (x.HasElements || x.Attributes().Any(attribute => !attributes.Contains(attribute.Name.ToString())))
+                    throw new InvalidDataException("Condizione achievement non supportata.");
+                int threshold, points;
+                if (!Int32.TryParse((string)x.Attribute("threshold"), NumberStyles.None, CultureInfo.InvariantCulture, out threshold) ||
+                    !Int32.TryParse((string)x.Attribute("points"), NumberStyles.None, CultureInfo.InvariantCulture, out points))
+                    throw new InvalidDataException("Soglia o punteggio achievement non valido.");
                 var a = new Achievement {
                     Id = (string)x.Attribute("id"), Title = (string)x.Attribute("title"),
                     Description = (string)x.Attribute("description"), Field = (string)x.Attribute("field"),
-                    Threshold = (int)x.Attribute("threshold"), Points = (int)x.Attribute("points") };
+                    Threshold = threshold, Points = points };
                 if (String.IsNullOrWhiteSpace(a.Id) || String.IsNullOrWhiteSpace(a.Title) ||
-                    results.Any(t => t.Id == a.Id) || (a.Field != "rupees" && a.Field != "max_health") || a.Threshold <= 0 || a.Points <= 0)
+                    String.IsNullOrWhiteSpace(a.Description) || a.Id != a.Id.Trim() || a.Id.Length > 128 ||
+                    results.Any(t => t.Id == a.Id) || (a.Field != "rupees" && a.Field != "max_health") || a.Threshold <= 0 || a.Points <= 0 ||
+                    (a.Field == "rupees" && a.Threshold > 5000) ||
+                    (a.Field == "max_health" && (a.Threshold < 12 || a.Threshold > 80 || a.Threshold % 4 != 0)))
                     throw new InvalidDataException("Definizione achievement non valida.");
                 results.Add(a);
             }
@@ -96,9 +118,12 @@ namespace WiiUAchievements
         readonly Dictionary<string, Unlock> unlocked = new Dictionary<string, Unlock>();
         public string Warning { get; private set; }
         public ProgressStore(string directory, string player, string gameIdentity)
+            : this(directory, player, gameIdentity, AchievementSet.Revision) { }
+        public ProgressStore(string directory, string player, string gameIdentity, string revision)
         {
             if (String.IsNullOrWhiteSpace(player)) throw new ArgumentException("Inserisci un nome giocatore.");
-            identity = player.Trim() + "|" + gameIdentity + "|" + AchievementSet.Revision;
+            if (String.IsNullOrWhiteSpace(gameIdentity) || String.IsNullOrWhiteSpace(revision)) throw new ArgumentException("Identità del gioco o revisione mancante.");
+            identity = player.Trim() + "|" + gameIdentity + "|" + revision;
             string key;
             using (var sha = SHA256.Create()) key = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(identity))).Replace("-", "").Substring(0, 24);
             path = Path.Combine(directory, key + ".xml");
@@ -135,16 +160,36 @@ namespace WiiUAchievements
             foreach (var item in temp) unlocked.Add(item.Key, item.Value);
         }
         public bool Contains(string id) { return unlocked.ContainsKey(id); }
-        public Unlock Get(string id) { Unlock value; return unlocked.TryGetValue(id, out value) ? value : null; }
+        public Unlock Get(string id)
+        {
+            Unlock value;
+            return unlocked.TryGetValue(id, out value) ? new Unlock { Id = value.Id, Utc = value.Utc } : null;
+        }
         public void Award(string id, DateTime utc)
         {
-            if (Contains(id)) return;
-            var entries = unlocked.Values.Concat(new[] { new Unlock { Id = id, Utc = utc } }).OrderBy(x => x.Utc);
+            AwardMany(new[] { id }, utc);
+        }
+        public void AwardMany(IEnumerable<string> ids, DateTime utc)
+        {
+            if (ids == null) throw new ArgumentNullException("ids");
+            if (utc.Kind != DateTimeKind.Utc || utc == DateTime.MinValue) throw new ArgumentException("Timestamp sblocco non valido.");
+            var requested = ids.Distinct().ToList();
+            if (requested.Any(String.IsNullOrWhiteSpace)) throw new ArgumentException("ID sblocco non valido.");
+            var additions = requested.Where(id => !Contains(id)).Select(id => new Unlock { Id = id, Utc = utc }).ToList();
+            if (additions.Count == 0) return;
+            var entries = unlocked.Values.Concat(additions).OrderBy(x => x.Utc).ThenBy(x => x.Id, StringComparer.Ordinal);
             var doc = new XDocument(new XElement("progress", new XAttribute("identity", identity),
                 entries.Select(x => new XElement("unlock", new XAttribute("id", x.Id), new XAttribute("utc", x.Utc.ToString("o", CultureInfo.InvariantCulture))))));
-            SafeXml.AtomicSave(doc, path); // Commit on disk before publishing an unlock.
-            unlocked.Add(id, new Unlock { Id = id, Utc = utc });
+            SafeXml.AtomicSave(doc, path); // All awards from a sample commit together, before publishing any.
+            foreach (var item in additions) unlocked.Add(item.Id, item);
         }
+    }
+
+    public enum AchievementPhase { WaitingForBaseline, Stabilizing, AlreadySatisfied, Tracking, Confirming, Unlocked }
+    public sealed class AchievementStatus
+    {
+        public AchievementPhase Phase { get; internal set; }
+        public int Confirmations { get; internal set; }
     }
 
     public sealed class AchievementEngine
@@ -153,29 +198,67 @@ namespace WiiUAchievements
         readonly ProgressStore store;
         readonly Dictionary<string, bool> armed = new Dictionary<string, bool>();
         readonly Dictionary<string, int> streak = new Dictionary<string, int>();
+        readonly Dictionary<string, int> below = new Dictionary<string, int>();
+        readonly Dictionary<string, AchievementStatus> states = new Dictionary<string, AchievementStatus>();
+        public const int RequiredSamples = 3;
+        public int StateVersion { get; private set; }
         DateTime? lastSample;
-        public AchievementEngine(List<Achievement> rules, ProgressStore progress) { achievements = rules; store = progress; Reset(); }
+        public AchievementEngine(List<Achievement> rules, ProgressStore progress)
+        {
+            if (rules == null || progress == null) throw new ArgumentNullException(rules == null ? "rules" : "progress");
+            if (rules.Any(a => a == null || String.IsNullOrWhiteSpace(a.Id)) || rules.Select(a => a.Id).Distinct().Count() != rules.Count)
+                throw new ArgumentException("Regole duplicate o non valide.");
+            achievements = new List<Achievement>(rules); store = progress; Reset();
+        }
+        void SetState(string id, AchievementPhase phase, int confirmations)
+        {
+            AchievementStatus old;
+            if (states.TryGetValue(id, out old) && old.Phase == phase && old.Confirmations == confirmations) return;
+            states[id] = new AchievementStatus { Phase = phase, Confirmations = confirmations };
+            StateVersion++;
+        }
+        public AchievementStatus Status(string id)
+        {
+            var state = states[id];
+            return new AchievementStatus { Phase = state.Phase, Confirmations = state.Confirmations };
+        }
         public void Reset()
         {
             lastSample = null;
-            foreach (var a in achievements) { armed[a.Id] = false; streak[a.Id] = 0; }
+            foreach (var a in achievements)
+            {
+                armed[a.Id] = false; streak[a.Id] = 0; below[a.Id] = 0;
+                SetState(a.Id, store.Contains(a.Id) ? AchievementPhase.Unlocked : AchievementPhase.WaitingForBaseline, 0);
+            }
         }
         public List<Achievement> Update(GameSnapshot s)
         {
+            try { if (s == null) throw new ArgumentNullException("s"); s.Validate(); }
+            catch { Reset(); throw; }
             if (lastSample.HasValue && (s.Utc <= lastSample.Value || (s.Utc - lastSample.Value).TotalSeconds > 1)) Reset();
             var awards = new List<Achievement>();
             foreach (var a in achievements)
             {
                 if (store.Contains(a.Id)) continue;
                 bool met = a.Met(s);
-                // First sample only establishes a baseline. Existing save progress is not awarded.
-                if (!lastSample.HasValue) { armed[a.Id] = !met; streak[a.Id] = 0; continue; }
-                if (!met) { armed[a.Id] = true; streak[a.Id] = 0; continue; }
-                if (!armed[a.Id]) continue;
-                if (++streak[a.Id] < 3) continue;
-                store.Award(a.Id, s.Utc);
+                if (!met)
+                {
+                    streak[a.Id] = 0;
+                    below[a.Id] = Math.Min(RequiredSamples, below[a.Id] + 1);
+                    if (below[a.Id] >= RequiredSamples) armed[a.Id] = true;
+                    SetState(a.Id, armed[a.Id] ? AchievementPhase.Tracking : AchievementPhase.Stabilizing, 0);
+                    continue;
+                }
+                below[a.Id] = 0;
+                if (!armed[a.Id]) { SetState(a.Id, AchievementPhase.AlreadySatisfied, 0); continue; }
+                streak[a.Id]++;
+                SetState(a.Id, AchievementPhase.Confirming, streak[a.Id]);
+                if (streak[a.Id] < RequiredSamples) continue;
                 awards.Add(a);
             }
+            try { store.AwardMany(awards.Select(a => a.Id), s.Utc); }
+            catch { Reset(); throw; }
+            foreach (var a in awards) SetState(a.Id, AchievementPhase.Unlocked, 0);
             lastSample = s.Utc;
             return awards;
         }
