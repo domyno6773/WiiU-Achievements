@@ -17,7 +17,7 @@ namespace WiiUAchievements
     // stops itself when nothing moves (ambient motion pauses while the game has focus).
     public sealed partial class MainForm
     {
-        enum Kind { Button, Primary, Icon, Tab, Tile, Toggle, Field }
+        enum Kind { Button, Primary, Icon, Tab, Tile, GameTile, Toggle, Field }
         sealed class Widget
         {
             public string Id, Name, Help, Glyph;
@@ -130,44 +130,50 @@ namespace WiiUAchievements
             float w = W, h = H;
             Put("settings", Kind.Icon, new RectangleF(w - Pad - 92, 12, 40, 40), "Impostazioni", OpenSheet, true, 0).Help = "Percorso di Cemu, profilo e notifiche";
             Put("log", Kind.Icon, new RectangleF(w - Pad - 40, 12, 40, 40), "Registro attività", ToggleDrawer, true, 0).Help = unreadLogs + " nuove voci";
-            bannerRect = new RectangleF(Pad, TopH + 16, w - Pad * 2, BannerH);
-
-            float tabsY = bannerRect.Bottom + 16, x = Pad + 4;
-            int unlocked = UnlockedCount;
-            string[] names = { "Tutti", "Sbloccati", "Da sbloccare" };
-            int[] counts = { rules.Count, unlocked, rules.Count - unlocked };
-            for (int i = 0; i < 3; i++)
+            AddButton("games", Kind.Button, "Giochi", null, w - Pad - 202, 16, ToggleLibrary, true, 0, 32, 100);
+            if (!libraryOpen)
             {
-                int index = i;
-                string count = counts[i].ToString(CultureInfo.InvariantCulture);
-                float tw = Measure(names[i], Theme.Font(14.5f, Weight.Bold)).Width + Measure(count, Theme.Font(12, Weight.Heavy)).Width + 52;
-                var tab = Put("tab" + i, Kind.Tab, new RectangleF(x, tabsY + 4, tw, TabsH - 8), names[i], () => SetFilter(index), true, 0);
-                tab.Checked = filter == i; tab.Glyph = count; tab.Help = count + " obiettivi";
-                x += tw;
-            }
+                bannerRect = new RectangleF(Pad, TopH + 16, w - Pad * 2, BannerH);
 
-            gridRect = new RectangleF(Pad - 8, tabsY + TabsH + 4, w - Pad * 2 + 16, h - BottomH - (tabsY + TabsH + 4));
-            var items = Filtered();
-            float inner = gridRect.Width - 16;
-            int cols = Math.Max(1, (int)((inner + Gap) / (316 + Gap)));
-            float tileW = (inner - Gap * (cols - 1)) / cols;
-            int rows = (items.Count + cols - 1) / cols;
-            contentHeight = rows * (TileH + Gap) - Gap + 24;
-            float maxScroll = Math.Max(0, contentHeight - gridRect.Height);
-            scrollTarget = Math.Max(0, Math.Min(maxScroll, scrollTarget));
-            scroll = Math.Max(0, Math.Min(maxScroll, scroll));
-            for (int i = 0; i < items.Count; i++)
-            {
-                var a = items[i];
-                var r = new RectangleF(gridRect.X + 8 + (i % cols) * (tileW + Gap), gridRect.Y + 12 + (i / cols) * (TileH + Gap) - scroll, tileW, TileH);
-                var tile = Put("tile:" + a.Id, Kind.Tile, r, a.Title, () => OpenDetail(a), true, 0);
-                tile.Achievement = a; tile.Help = a.Description;
-            }
+                float tabsY = bannerRect.Bottom + 16, x = Pad + 4;
+                int unlocked = UnlockedCount;
+                string[] names = { "Tutti", "Sbloccati", "Da sbloccare" };
+                int[] counts = { rules.Count, unlocked, rules.Count - unlocked };
+                for (int i = 0; i < 3; i++)
+                {
+                    int index = i;
+                    string count = counts[i].ToString(CultureInfo.InvariantCulture);
+                    float tw = Measure(names[i], Theme.Font(14.5f, Weight.Bold)).Width + Measure(count, Theme.Font(12, Weight.Heavy)).Width + 52;
+                    var tab = Put("tab" + i, Kind.Tab, new RectangleF(x, tabsY + 4, tw, TabsH - 8), names[i], () => SetFilter(index), true, 0);
+                    tab.Checked = filter == i; tab.Glyph = count; tab.Help = count + " obiettivi";
+                    x += tw;
+                }
 
-            float by = h - BottomH + 16;
-            x = AddButton("connect", Kind.Primary, "Collega Cemu", "A", Pad, by, Connect, CanConnect, 0) + 10;
-            x = AddButton("disconnect", Kind.Button, "Scollega", "Y", x, by, () => Disconnect("Sessione scollegata."), CanDisconnect, 0) + 10;
-            AddButton("demo", Kind.Button, "Prova demo", "X", x, by, StartDemo, CanConnect, 0);
+                gridRect = new RectangleF(Pad - 8, tabsY + TabsH + 4, w - Pad * 2 + 16, h - BottomH - (tabsY + TabsH + 4));
+                var items = Filtered();
+                float inner = gridRect.Width - 16;
+                int cols = Math.Max(1, (int)((inner + Gap) / (316 + Gap)));
+                float tileW = (inner - Gap * (cols - 1)) / cols;
+                int rows = (items.Count + cols - 1) / cols;
+                contentHeight = rows * (TileH + Gap) - Gap + 24;
+                float maxScroll = Math.Max(0, contentHeight - gridRect.Height);
+                scrollTarget = Math.Max(0, Math.Min(maxScroll, scrollTarget));
+                scroll = Math.Max(0, Math.Min(maxScroll, scroll));
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var a = items[i];
+                    var r = new RectangleF(gridRect.X + 8 + (i % cols) * (tileW + Gap), gridRect.Y + 12 + (i / cols) * (TileH + Gap) - scroll, tileW, TileH);
+                    var tile = Put("tile:" + a.Id, Kind.Tile, r, a.Title, () => OpenDetail(a), true, 0);
+                    tile.Achievement = a; tile.Help = a.Description;
+                }
+
+                float by = h - BottomH + 16;
+                x = AddButton("connect", Kind.Primary, "Collega Cemu", "A", Pad, by, Connect, CanConnect, 0) + 10;
+                x = AddButton("disconnect", Kind.Button, "Scollega", "Y", x, by, () => Disconnect("Sessione scollegata."), CanDisconnect, 0) + 10;
+                if (CanDisconnect) AddButton("pause", Kind.Button, paused ? "Riprendi" : "Pausa", "P", x, by, TogglePause, true, 0);
+                else AddButton("demo", Kind.Button, "Prova demo", "X", x, by, StartDemo, CanConnect, 0);
+            }
+            else ArrangeLibrary(w, h);
 
             drawerRect = new RectangleF(Pad, h - BottomH - DrawerH * Theme.EaseOut(drawer), w - Pad * 2, DrawerH + 24);
             if (drawer > 0) Put("log-close", Kind.Icon, new RectangleF(drawerRect.Right - 54, drawerRect.Y + 14, 36, 36), "Chiudi registro", CloseDrawer, true, 0);
@@ -329,9 +335,13 @@ namespace WiiUAchievements
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(scale, scale);
-            if (clip.IntersectsWith(gridRect)) DrawGrid(g, clip, t);
-            if (clip.IntersectsWith(new RectangleF(0, bannerRect.Bottom, W, TabsH + 24))) DrawTabs(g, t);
-            if (clip.IntersectsWith(Theme.Inflate(bannerRect, 22, 22))) DrawBanner(g);
+            if (libraryOpen) DrawLibrary(g, t);
+            else
+            {
+                if (clip.IntersectsWith(gridRect)) DrawGrid(g, clip, t);
+                if (clip.IntersectsWith(new RectangleF(0, bannerRect.Bottom, W, TabsH + 24))) DrawTabs(g, t);
+                if (clip.IntersectsWith(Theme.Inflate(bannerRect, 22, 22))) DrawBanner(g);
+            }
             if (clip.IntersectsWith(new RectangleF(0, 0, W, TopH + 10))) DrawTopBar(g, t);
             if (drawer > 0) DrawDrawer(g, t);
             if (clip.IntersectsWith(new RectangleF(0, H - BottomH - 12, W, BottomH + 12))) DrawBottomBar(g, t);
@@ -379,6 +389,7 @@ namespace WiiUAchievements
             {
                 case StatusKind.Live: return "Collegato";
                 case StatusKind.Demo: return "Demo attiva";
+                case StatusKind.Paused: return "In pausa";
                 case StatusKind.Busy: return "Collegamento…";
                 case StatusKind.Error: return "Errore";
                 default: return "Non collegato";
@@ -390,6 +401,7 @@ namespace WiiUAchievements
             {
                 case StatusKind.Live: return Theme.Success;
                 case StatusKind.Demo: return Theme.Warning;
+                case StatusKind.Paused: return Theme.Warning;
                 case StatusKind.Busy: return Theme.Accent;
                 case StatusKind.Error: return Theme.Danger;
                 default: return Color.FromArgb(160, 170, 178);
@@ -416,7 +428,7 @@ namespace WiiUAchievements
             string label = StatusShort();
             var pillFont = Theme.Font(13.5f, Weight.Bold);
             float pw = Measure(label, pillFont).Width + 46;
-            statusPill = new RectangleF(settings.Bounds.X - 14 - pw, 16, pw, 32);
+            statusPill = new RectangleF(widgets["games"].Bounds.X - 14 - pw, 16, pw, 32);
             Theme.Fill(g, statusPill, 16, Color.White, Color.FromArgb(238, 243, 246));
             Theme.Stroke(g, statusPill, 16, Theme.Line, 1);
             var dot = new PointF(statusPill.X + 18, statusPill.Y + 16);
@@ -437,6 +449,7 @@ namespace WiiUAchievements
                 Theme.Trophy(g, new RectangleF(tx, 17, 28, 28));
                 Theme.Text(g, title, titleFont, Theme.Ink, new RectangleF(tx + 36, 14, tw, 34), StringAlignment.Near, StringAlignment.Center, false);
             }
+            DrawButton(g, widgets["games"], t);
             DrawIconButton(g, settings, t, (gg, r, c) => Theme.Gear(gg, r, c));
             var log = widgets["log"];
             DrawIconButton(g, log, t, (gg, r, c) => Theme.ListIcon(gg, r, c));
@@ -474,8 +487,8 @@ namespace WiiUAchievements
             banner.Draw(g, r, 22, ambientTime, scale);
             Theme.Stroke(g, Theme.Inflate(r, -0.5f, -0.5f), 22, Color.FromArgb(80, 255, 255, 255), 1.2f);
             float tx = r.X + 28, textW = r.Width - 28 - 240;
-            Theme.ShadowText(g, "The Wind Waker HD", Theme.Font(31, Weight.Heavy), Color.White, new RectangleF(tx, r.Y + 18, textW, 44), StringAlignment.Near, StringAlignment.Near, false, 90);
-            Theme.ShadowText(g, "EUR v0  ·  Cemu 2.6  ·  Alpha 0.2", Theme.Font(13.5f, Weight.Bold), Color.FromArgb(225, 255, 255, 255), new RectangleF(tx + 1, r.Y + 61, textW, 20), StringAlignment.Near, StringAlignment.Near, false, 70);
+            Theme.ShadowText(g, selectedGame.Title, Theme.Font(31, Weight.Heavy), Color.White, new RectangleF(tx, r.Y + 18, textW, 44), StringAlignment.Near, StringAlignment.Near, false, 90);
+            Theme.ShadowText(g, selectedGame.Profiles[0].Label + "  ·  Cemu " + selectedGame.Profiles[0].CemuVersion + "  ·  Alpha 0.3", Theme.Font(13.5f, Weight.Bold), Color.FromArgb(225, 255, 255, 255), new RectangleF(tx + 1, r.Y + 61, textW, 20), StringAlignment.Near, StringAlignment.Near, false, 70);
             var dot = new PointF(tx + 7, r.Y + 101);
             using (var b = new SolidBrush(Color.FromArgb(235, 255, 255, 255))) g.FillEllipse(b, Theme.Square(dot, 14));
             using (var b = new SolidBrush(StatusColor())) g.FillEllipse(b, Theme.Square(dot, 9));
@@ -704,24 +717,25 @@ namespace WiiUAchievements
             }
             if (current == null)
             {
-                string text = demo ? "In attesa di dati simulati" : centered ? "Da sbloccare · collega Cemu per vedere i progressi" : "Da sbloccare";
+                string text = paused ? "Registrazione in pausa" : demo ? "In attesa di dati simulati" : centered ? "Da sbloccare · collega Cemu per vedere i progressi" : "Da sbloccare";
                 float x = centered ? r.X + (r.Width - Measure(text, font).Width - 20) / 2 : r.X;
                 Theme.Lock(g, new RectangleF(x, r.Y + (r.Height - 15) / 2, 14, 15), Theme.Faint);
                 Theme.Text(g, text, font, Theme.Faint, new RectangleF(x + 20, r.Y, r.Right - x - 20, r.Height), StringAlignment.Near, StringAlignment.Center, false);
                 return;
             }
             int value = current.Value(a.Field);
-            bool baseline;
-            if (value >= a.Threshold && aboveSinceStart.TryGetValue(a.Id, out baseline) && baseline)
+            var evaluation = engine == null ? null : engine.Status(a.Id);
+            if (evaluation != null && evaluation.Phase == AchievementPhase.AlreadySatisfied)
             {
                 // The engine never awards progress that was already present when monitoring started.
-                const string text = "Soglia già superata al collegamento";
+                const string text = "Soglia già raggiunta all'avvio";
                 float x = centered ? r.X + (r.Width - Measure(text, font).Width) / 2 : r.X;
                 Theme.Text(g, text, font, Theme.Warning, new RectangleF(x, r.Y, r.Right - x, r.Height), StringAlignment.Near, StringAlignment.Center, false);
                 return;
             }
             bool hearts = a.Field == "max_health";
-            string label = value >= a.Threshold ? "Verifica…" : hearts ? Hearts(value) + " / " + (a.Threshold / 4) + " cuori" : value + " / " + a.Threshold;
+            string label = evaluation != null && evaluation.Phase == AchievementPhase.Stabilizing ? "Sincronizzazione…" :
+                evaluation != null && evaluation.Phase == AchievementPhase.Confirming ? "Verifica " + evaluation.Confirmations + "/" + AchievementEngine.RequiredSamples : hearts ? Hearts(value) + " / " + (a.Threshold / 4) + " cuori" : value + " / " + a.Threshold;
             float lw = Measure(label, font).Width + 6;
             var bar = new RectangleF(r.X, r.Y + r.Height / 2 - 4, r.Width - lw - 10, 8);
             Theme.Fill(g, bar, 4, Color.FromArgb(214, 223, 230), Color.FromArgb(228, 234, 239));
@@ -737,8 +751,16 @@ namespace WiiUAchievements
             using (var b = new LinearGradientBrush(new RectangleF(0, y - 1, w, BottomH + 2), Color.FromArgb(242, 245, 248), Color.FromArgb(220, 227, 233), 90f)) g.FillRectangle(b, 0, y, w, BottomH);
             using (var pen = new Pen(Color.FromArgb(198, 207, 214))) g.DrawLine(pen, 0, y + 0.5f, w, y + 0.5f);
             using (var pen = new Pen(Color.White)) g.DrawLine(pen, 0, y + 1.5f, w, y + 1.5f);
-            foreach (var id in new[] { "connect", "disconnect", "demo" }) DrawButton(g, widgets[id], t);
-            float hx = widgets["demo"].Bounds.Right + 26;
+            if (libraryOpen)
+            {
+                DrawButton(g, widgets["library-back"], t);
+                Theme.Text(g, "Gioco selezionato: " + selectedGame.Title, Theme.Font(13, Weight.Bold), Theme.Muted,
+                    new RectangleF(widgets["library-back"].Bounds.Right + 24, y + 12, w - widgets["library-back"].Bounds.Right - 48, 42), StringAlignment.Near, StringAlignment.Center, true);
+                return;
+            }
+            string last = CanDisconnect ? "pause" : "demo";
+            foreach (var id in new[] { "connect", "disconnect", last }) DrawButton(g, widgets[id], t);
+            float hx = widgets[last].Bounds.Right + 26;
             if (w - Pad - hx > 120) Theme.Text(g, hint, Theme.Font(13, Weight.Regular), Theme.Muted, new RectangleF(hx, y + 10, w - Pad - hx, BottomH - 18), StringAlignment.Near, StringAlignment.Center, true);
         }
         void DrawButton(Graphics g, Widget w, float t)
@@ -854,9 +876,9 @@ namespace WiiUAchievements
             Theme.Fill(g, info, 12, Color.White, Color.FromArgb(246, 249, 250));
             Theme.Stroke(g, info, 12, Theme.Line, 1);
             var f = Theme.Font(13, Weight.Regular);
-            Theme.Text(g, "The Wind Waker HD · EUR v0 · Cemu 2.6", Theme.Font(13.5f, Weight.Bold), Theme.Ink, new RectangleF(info.X + 14, info.Y + 10, info.Width - 28, 20));
-            Theme.Text(g, "Title ID 0005000010143600", f, Theme.Muted, new RectangleF(info.X + 14, info.Y + 31, info.Width - 28, 18));
-            Theme.Text(g, "RPX cdc68acd · sola lettura della memoria", f, Theme.Muted, new RectangleF(info.X + 14, info.Y + 50, info.Width - 28, 18));
+            Theme.Text(g, selectedGame.Title + " · " + selectedGame.Profiles[0].Label + " · Cemu " + selectedGame.Profiles[0].CemuVersion, Theme.Font(13.5f, Weight.Bold), Theme.Ink, new RectangleF(info.X + 14, info.Y + 10, info.Width - 28, 20));
+            Theme.Text(g, "Title ID " + selectedGame.Profiles[0].TitleId, f, Theme.Muted, new RectangleF(info.X + 14, info.Y + 31, info.Width - 28, 18));
+            Theme.Text(g, "RPX " + selectedGame.Profiles[0].RpxHash + " · sola lettura della memoria", f, Theme.Muted, new RectangleF(info.X + 14, info.Y + 50, info.Width - 28, 18));
             Theme.Text(g, "Grafica e suoni originali generati dal codice, ispirati allo stile Wii U. Font Nunito © The Nunito Project Authors, SIL Open Font License 1.1.",
                 Theme.Font(11.5f, Weight.Regular), Theme.Faint, new RectangleF(sx, Math.Max(640, H - 54), cw, 40), StringAlignment.Near, StringAlignment.Near, true);
         }
@@ -946,6 +968,7 @@ namespace WiiUAchievements
                 if (w.Layer != layer || !w.Bounds.Contains(p)) continue;
                 if (overDrawer && w.Id != "log-close") continue;
                 if (w.Kind == Kind.Tile && !gridRect.Contains(p)) continue;
+                if (w.Kind == Kind.GameTile && !libraryGridRect.Contains(p)) continue;
                 return w;
             }
             return null;
@@ -993,6 +1016,7 @@ namespace WiiUAchievements
             base.OnMouseWheel(e);
             var p = Logical(e.Location);
             if (drawer > 0 && drawerRect.Contains(p) && p.Y < H - BottomH) logScroll += e.Delta / 120f * 3;
+            else if (ActiveLayer == 0 && libraryOpen) libraryScroll -= e.Delta / 120f * 96;
             else if (ActiveLayer == 0) scrollTarget -= e.Delta / 120f * 96;
             Invalidate(); Kick();
         }
@@ -1013,6 +1037,11 @@ namespace WiiUAchievements
             focused = w; focusVisible = true;
             if (w.Kind == Kind.Field && w.Box != null && w.Box.Visible) w.Box.Focus();
             else if (ActiveControl != null) { ActiveControl = null; Focus(); }
+            if (w.Kind == Kind.GameTile)
+            {
+                if (w.Bounds.Top < libraryGridRect.Top + 8) libraryScroll -= libraryGridRect.Top + 8 - w.Bounds.Top;
+                else if (w.Bounds.Bottom > libraryGridRect.Bottom - 8) libraryScroll += w.Bounds.Bottom - libraryGridRect.Bottom + 8;
+            }
             if (w.Kind == Kind.Tile)
             {
                 var b = w.Bounds;
@@ -1033,7 +1062,7 @@ namespace WiiUAchievements
         {
             var list = Focusables();
             if (list.Count == 0) return;
-            if (focused == null || !list.Contains(focused) || !focusVisible) { SetFocus(list.FirstOrDefault(w => w.Kind == Kind.Tile) ?? list[0]); return; }
+            if (focused == null || !list.Contains(focused) || !focusVisible) { SetFocus(list.FirstOrDefault(w => w.Kind == Kind.Tile || w.Kind == Kind.GameTile) ?? list[0]); return; }
             var from = Theme.Center(focused.Bounds);
             float dx = key == Keys.Left ? -1 : key == Keys.Right ? 1 : 0, dy = key == Keys.Up ? -1 : key == Keys.Down ? 1 : 0;
             Widget best = null;
@@ -1069,11 +1098,13 @@ namespace WiiUAchievements
                     if (focused != null && focused.Visible && focused.Layer == ActiveLayer) Press(focused);
                     return true;
                 case Keys.B: case Keys.Back: CloseTop(); return true;
-                case Keys.A: if (ActiveLayer == 0 && CanConnect) Connect(); return true;
-                case Keys.X: if (ActiveLayer == 0 && CanConnect) StartDemo(); return true;
+                case Keys.A: if (!libraryOpen && ActiveLayer == 0 && CanConnect) Connect(); return true;
+                case Keys.X: if (!libraryOpen && ActiveLayer == 0 && CanConnect) StartDemo(); return true;
                 case Keys.Y: if (ActiveLayer == 0 && CanDisconnect) Disconnect("Sessione scollegata."); return true;
-                case Keys.PageDown: scrollTarget += gridRect.Height * 0.8f; Kick(); return true;
-                case Keys.PageUp: scrollTarget -= gridRect.Height * 0.8f; Kick(); return true;
+                case Keys.P: if (!libraryOpen && ActiveLayer == 0 && CanDisconnect) TogglePause(); return true;
+                case Keys.G: if (ActiveLayer == 0) ToggleLibrary(); return true;
+                case Keys.PageDown: if (ActiveLayer == 0) { if (libraryOpen) libraryScroll += libraryGridRect.Height * 0.8f; else scrollTarget += gridRect.Height * 0.8f; Kick(); } return true;
+                case Keys.PageUp: if (ActiveLayer == 0) { if (libraryOpen) libraryScroll -= libraryGridRect.Height * 0.8f; else scrollTarget -= gridRect.Height * 0.8f; Kick(); } return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
@@ -1090,6 +1121,7 @@ namespace WiiUAchievements
             if (dialogTarget > 0) CloseDialog();
             else if (sheetTarget > 0) CloseSheet();
             else if (drawerTarget > 0) CloseDrawer();
+            else if (libraryOpen) CloseLibrary();
             else return false;
             return true;
         }
@@ -1168,7 +1200,7 @@ namespace WiiUAchievements
                 {
                     switch (widget.Kind)
                     {
-                        case Kind.Tile: return AccessibleRole.ListItem;
+                        case Kind.Tile: case Kind.GameTile: return AccessibleRole.ListItem;
                         case Kind.Tab: return AccessibleRole.PageTab;
                         case Kind.Toggle: return AccessibleRole.CheckButton;
                         case Kind.Field: return AccessibleRole.Text;

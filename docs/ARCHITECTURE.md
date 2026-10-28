@@ -12,16 +12,18 @@ On connection, `MainForm.Connect`:
 
 1. Finds exactly one Cemu process matching the selected executable path.
 2. Reads title, version, RPX hash, memory base, and emulator version from the log.
-3. Enforces the single currently supported configuration.
+3. Requires an exact match in the selected catalog entry’s profiles and creates
+   that profile’s reader. Only Wind Waker is currently available.
 4. Opens Cemu for query/read access and detects its 4 GiB guest reservation.
 5. Requires the base from the log to match a discovered reservation.
-6. Reads six bytes at `guestBase + 0x145B7B80` and validates a snapshot.
+6. Calls the profile reader. The current Wind Waker reader reads six bytes at
+   `guestBase + 0x145B7B80` and validates a snapshot.
 7. Opens the selected profile's progress, establishes an engine baseline, then
    starts a WinForms timer with a nominal interval of 100 ms.
 
 Each tick reads a snapshot, runs the engine, persists any awards, updates the UI,
 and queues notifications. The interface is custom-drawn (`MainForm.Ui.cs`,
-`Theme.cs`, `Banner.cs`, `Notification.cs`). Its rendering model, animation timer,
+`MainForm.Library.cs`, `Theme.cs`, `Banner.cs`, `Notification.cs`). Its rendering model, animation timer,
 input map and asset policy are described in `docs/UI.md`. UI state never feeds
 back into the engine. The title fingerprint and memory base are rechecked
 from the log approximately once per second. Failures disconnect the reader and
@@ -40,14 +42,21 @@ scanner chunks, supports cancellation, and caps excessive matches. It is a
 research utility, not automatic profile validation and not a currently exposed
 GUI workflow.
 
+`GameCatalog` owns game definitions, set revisions, exact profiles and reader
+factories. Its collections are immutable. `MainForm` keeps the selected game and
+loads that game’s rules before changing selection. See `GAMES.md`.
+
 `GameSnapshot` parses the six-byte big-endian header and provides named fields
 to rules. `Observation.Validate` enforces 12–80 quarter-heart capacity, capacity
 divisible by four, current health between zero and capacity, and 0–5000 rupees.
 Those assumptions are part of the current profile; review them before extending
 the game or supporting other titles.
 
-`AchievementSet.Load` accepts only the revision `wwhd-alpha-1`, unique IDs,
-positive thresholds/points, and the fields `rupees` and `max_health`. Conditions
+`AchievementSet.Load` requires the revision supplied by the selected game
+(the original overload still requires `wwhd-alpha-1`), unique IDs, nonblank
+text, positive thresholds/points, and the fields `rupees` and `max_health`.
+Unreachable thresholds, fractional heart capacities, unknown child elements
+and unsupported condition attributes are rejected. Conditions
 are currently a single `>=` threshold. Adding arbitrary XML fields alone does
 not add an engine capability.
 
@@ -55,12 +64,27 @@ not add an engine capability.
 For each locked rule it maintains an armed flag and a consecutive-match count:
 
 - A baseline at or above the threshold does not award or arm that rule.
-- A below-threshold value arms the rule and clears its match count.
+- Three consecutive below-threshold values arm the rule; a single low glitch
+  cannot arm an already satisfied save. Below-threshold samples also clear a
+  pending match count.
 - Three consecutive at/above-threshold samples after arming award it.
 - A timestamp reversal or sampling gap longer than one second resets all
   transient state and treats the next sample as a baseline.
 - Already persisted IDs never award again in that profile.
-- Persistence completes before an award is returned to the UI.
+- Every award due in the same sample commits together via `AwardMany` before
+  any award is returned to the UI. A write failure resets transient state and
+  publishes no partial result.
+- Null snapshots, missing/non-UTC timestamps and impossible values reset the
+  engine and throw, including when callers bypass byte parsing.
+- `Status(id)` returns a snapshot of the authoritative phase and confirmation
+  count. `StateVersion` changes only when evaluation state changes, so the UI
+  updates confirmations even when the numeric game values remain the same.
+  The UI no longer maintains its own baseline mirror.
+
+Manual pause stops the sampling timer, clears pending notifications and resets
+the engine. Resume resets it again and rechecks session identity before sampling.
+Earned progress remains. This is an explicit user-controlled recording boundary,
+not automatic gameplay/menu/load/save-slot detection.
 
 This is polling of persistent state, not event hooks or frame-perfect tracking.
 
@@ -68,7 +92,7 @@ This is polling of persistent state, not event hooks or frame-perfect tracking.
 
 All paths are relative to the executable folder:
 
-- `data/settings.xml`: local Cemu path, profile name and the optional `sound` and
+- `data/settings.xml`: local Cemu path, profile name, selected catalog `game` ID, and the optional `sound` and
   `ambient` UI toggles. Missing toggles default to enabled.
 - `data/progress/<key>.xml`: earned IDs with UTC timestamps.
 - `data/demo/<random ID>/`: isolated synthetic-session progress.
@@ -106,7 +130,9 @@ continuity. Avoid embedding all future event logic in WinForms timer handlers.
 The build embeds `assets/fonts/*.ttf` as resources and references
 `Accessibility.dll` for the custom accessible objects.
 
-The profile constants currently live in `MainForm.Connect`; moving them into an
-explicit versioned profile type is reasonable preparatory work. The GUI and
-session parser currently lack automated regression coverage; do not count the
-engine tests as coverage of those components.
+Profile metadata and the memory adapter now live in `GameCatalog.cs`. The
+snapshot fields and threshold schema are still Wind Waker specific: a future
+game must add its required data validation and rules with its adapter.
+`tests/UiTests.cs` covers catalog navigation, unavailable cards, recording
+pause/resume, settings and minimum-size layout. The session-log parser still
+lacks dedicated automated coverage; engine/UI tests do not prove live Cemu behavior.

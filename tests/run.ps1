@@ -4,7 +4,8 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('WiiUAchievements-tests-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 $exe = Join-Path $testRoot 'CoreTests.exe'
-& $compiler /nologo /target:exe /platform:x64 /utf8output /r:System.Xml.Linq.dll "/out:$exe" (Join-Path $project 'src\Core.cs') (Join-Path $project 'src\MemoryReader.cs') (Join-Path $PSScriptRoot 'CoreTests.cs')
+& $compiler /nologo /langversion:5 /target:exe /platform:x64 /utf8output /r:System.Xml.Linq.dll "/out:$exe" (Join-Path $project 'src\Core.cs') (Join-Path $project 'src\MemoryReader.cs') (Join-Path $project 'src\GameSession.cs') (Join-Path $project 'src\GameCatalog.cs') (Join-Path $PSScriptRoot 'CoreTests.cs') (Join-Path $PSScriptRoot 'SystemTests.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Compilazione test fallita.' }
+Copy-Item -LiteralPath (Join-Path $project 'achievements.xml') -Destination $testRoot
 & $exe (Join-Path $testRoot 'results')
 if ($LASTEXITCODE -ne 0) { throw 'Test falliti.' }

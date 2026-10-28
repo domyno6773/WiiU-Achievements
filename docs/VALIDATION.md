@@ -2,6 +2,52 @@
 
 Date of initial live verification: **2026-10-28**, Europe/Rome.
 
+## Alpha 0.3 system and catalog checks (2026-10-28)
+
+Environment: Linux cloud container, Mono 6.8, C# 5 x64, libgdiplus and Xvfb.
+No access to the user's Windows PC, Cemu or the game was used for this change.
+
+- Application and both test executables compile at the C# 5 language level.
+- **46 portable checks passed**, including the original 12 non-Win32 assertions
+  and 34 new engine/schema/catalog checks. New cases cover stable low baselines,
+  rejection of a low glitch on a completed save, observable confirmation state,
+  invalid/null/timestampless snapshots, duplicate timestamps, gap resets,
+  simultaneous atomic awards, simulated storage failure and recovery, immutable
+  returned unlock records, game/revision progress isolation, a fixed legacy progress fixture, heart-capacity
+  transitions, impossible rule
+  thresholds and unknown attributes/elements, exact profile matching and blocked
+  unavailable games.
+- **22 UI smoke checks passed**: real mouse/keyboard dispatch opens the catalog,
+  selects the current game, returns with B/Esc, exposes unavailable cards to
+  accessibility clients, runs the existing demo through an unlock, pauses and
+  resumes without losing the unlock, keeps recording independent of catalog
+  navigation, fits the catalog at the supported minimum size, opens existing
+  settings, discards demo progress on disconnect, blocks game switches while
+  attached, switches a synthetic game after disconnect, preserves selection
+  when its rules fail to load, clears displayed progress on profile edits and
+  safely falls back from an unknown saved game ID.
+- Visually inspected rendered main, demo, catalog, paused and settings views,
+  including the minimum-size catalog. The palette, embedded source fonts,
+  original sea artwork, medals, shadows and existing card layout are preserved.
+  Mono uses installed Nunito, as explained in the alpha 0.2 record below.
+- `achievements.xml`, all ten IDs, `wwhd-alpha-1`, memory bytes/address, original
+  artwork/sound sources and legacy progress identity remain unchanged. The
+  original rupee unlock evidence below belongs to alpha 0.1, not a live alpha 0.3 run.
+
+The four native Win32 fixture assertions are explicitly skipped by `--portable`.
+`tests/run.ps1` still runs the full suite on Windows; `tests/run-ui.ps1` compiles
+and exercises the application in an isolated temporary folder. GitHub Actions
+is configured to run both, build and verify a new alpha 0.3 package, and retain
+the ZIP and UI previews. Windows CI results must be recorded from the actual run,
+not inferred from the Linux results above.
+
+Still pending: real Cemu thresholds and pause/load/resume, emulator restarts,
+fullscreen popup, multi-monitor behavior, actual audio, DPI/screen-reader
+behavior on the user's PC, and automatic menu/save-slot validity detection.
+Manual pause provides a recording boundary; it does not discover game state.
+The committed alpha 0.2 ZIP remains historical; rebuild current source or use a
+successful alpha 0.3 CI artifact rather than expecting that ZIP to contain changes.
+
 ## Real game observations
 
 Configuration: Cemu 2.6, Wind Waker HD EUR v0, Title ID `0005000010143600`,
@@ -24,7 +70,8 @@ progress. It is not a completed-game certification.
 
 ## Automated checks
 
-`tests/run.ps1` compiles a standalone test executable and executes 16 assertions:
+The original alpha 0.1 `tests/run.ps1` compiled a standalone test executable and
+executed these 16 assertions (the current suite adds the checks listed above):
 
 1. Big-endian rupee decoding and quarter-heart decoding.
 2. Rejection of impossible health.

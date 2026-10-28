@@ -1,8 +1,19 @@
-# Wii U Achievements — alpha 0.2
+# Wii U Achievements — alpha 0.3
 
 Applicazione Windows indipendente, scritta da zero. Primo gioco: **The Legend of Zelda: The Wind Waker HD**, edizione EUR v0, su **Cemu 2.6**.
 
 ![Finestra principale](docs/screenshots/main.png)
+
+**Novità dell’alpha 0.3:** sezione **Giochi** predisposta per nuovi titoli,
+con avviso esplicito per quelli non disponibili; comando **Pausa / Riprendi**;
+verifica più robusta delle soglie e salvataggio atomico degli sblocchi simultanei.
+Gli obiettivi restano gli stessi dieci e i progressi esistenti mantengono la loro identità.
+Grafica, banner, medaglie e suoni dell’alpha 0.2 sono conservati.
+
+Apri **Giochi** dalla barra superiore (oppure premi **G**). Per ora è disponibile
+solo Wind Waker HD nella configurazione indicata sotto. La voce **Altri giochi**
+è disabilitata: non contiene set pronti. I dettagli per aggiungere un gioco sono
+in [docs/GAMES.md](docs/GAMES.md).
 
 **Novità dell'alpha 0.2:** l'interfaccia è stata ridisegnata nello stile dei menu di sistema Wii U, con animazioni:
 
@@ -55,7 +66,7 @@ Non servono Python, AutoHotkey, EmuHook, un account o una connessione Internet. 
 
 ## Interfaccia e comandi
 
-- Su ogni scheda c'è lo stato dell'obiettivo: sbloccato con data, avanzamento in tempo reale, oppure «Soglia già superata al collegamento». In quest'ultimo caso l'obiettivo non si sblocca finché il valore non scende sotto la soglia e poi la raggiunge di nuovo.
+- Su ogni scheda c'è lo stato dell'obiettivo: sbloccato con data, avanzamento in tempo reale, oppure «Soglia già raggiunta all’avvio». In quest'ultimo caso l'obiettivo non si sblocca finché il valore non rimane sotto la soglia per tre campioni validi e poi la raggiunge per altri tre campioni.
 - **Impostazioni:** percorso di Cemu, profilo locale e suono di sblocco. Contiene anche le animazioni del banner e il pulsante **Prova notifica**, utile per controllare che la notifica compaia sopra il gioco nella tua modalità a schermo intero.
 - Le animazioni di sfondo si fermano quando la finestra non è attiva, quindi non consumano CPU mentre giochi.
 
@@ -66,7 +77,9 @@ Non servono Python, AutoHotkey, EmuHook, un account o una connessione Internet. 
 | A | Collega Cemu |
 | X | Prova demo |
 | Y | Scollega |
-| B / Esc | Chiude dettaglio, impostazioni o registro |
+| P | Pausa / Riprendi la registrazione |
+| G | Apre / chiude la sezione Giochi |
+| B / Esc | Chiude il pannello aperto o torna agli obiettivi da Giochi |
 
 **È una prima alpha funzionante, non un set completo per Wind Waker HD.** Inventario, storia, dungeon, boss, collezionabili e sfide senza danni sono ancora da sviluppare e validare.
 
@@ -85,21 +98,21 @@ La lettura di sei byte non è una fotografia atomica dell'intero gioco. Il motor
 
 ## Regole e progressi
 
-All'avvio viene acquisita una baseline: un obiettivo già soddisfatto non si sblocca automaticamente caricando una partita avanzata. Il valore deve prima risultare inferiore alla soglia e poi raggiungerla durante il monitoraggio. Ad esempio, **Primi spiccioli** richiede il passaggio da meno di 10 ad almeno 10 rupie nel portafoglio.
+All'avvio viene acquisita una baseline: un obiettivo già soddisfatto non si sblocca automaticamente caricando una partita avanzata. Il valore deve prima restare inferiore alla soglia per tre campioni consecutivi validi e poi raggiungerla per altri tre campioni durante il monitoraggio. Un singolo valore basso anomalo non basta ad abilitare lo sblocco. Ad esempio, **Primi spiccioli** richiede il passaggio da meno di 10 ad almeno 10 rupie nel portafoglio.
 
 Una disconnessione, un campione non valido o una pausa di campionamento superiore a un secondo azzerano le condizioni in corso. Le ricompense già salvate restano disponibili.
 
-I progressi sono in `data/progress/`, separati per nome del profilo, titolo, versione, hash RPX e revisione del set. La scrittura usa un file temporaneo e la sostituzione atomica; il precedente file rimane come backup `.bak`. Se il file è danneggiato, viene conservato prima del recupero dal backup.
+I progressi sono in `data/progress/`, separati per nome del profilo, titolo, versione, hash RPX e revisione del set. Gli obiettivi maturati nello stesso campione vengono salvati insieme, prima di notificare qualsiasi sblocco. La scrittura usa un file temporaneo e la sostituzione atomica; il precedente file rimane come backup `.bak`. Se il file è danneggiato, viene conservato prima del recupero dal backup.
 
-Per una nuova partita scegli un altro profilo locale. **Questa alpha non riconosce ancora automaticamente il file di salvataggio selezionato né il passaggio tra salvataggi nello stesso gioco.** Caricare una partita differente durante la registrazione può essere interpretato come un cambiamento di progresso: scollega prima l'app e ricollegala dopo il caricamento. Non è presente una modalità hardcore o una verifica anticheat. I punti sono esclusivamente locali e non vengono inviati a RetroAchievements.
+Per una nuova partita scegli un altro profilo locale. **Questa alpha non riconosce ancora automaticamente il file di salvataggio selezionato né il passaggio tra salvataggi nello stesso gioco.** Caricare una partita differente durante la registrazione può essere interpretato come un cambiamento di progresso: metti in pausa prima del caricamento e riprendi dopo essere tornato nel gioco, oppure scollega e ricollega l'app. **Pausa** ferma soltanto la registrazione degli achievement: il gioco continua. Alla ripresa vengono azzerate le condizioni in corso e acquisito un nuovo stato iniziale; gli sblocchi salvati rimangono. La pausa non riconosce automaticamente menu o cambi di salvataggio. Non è presente una modalità hardcore o una verifica anticheat. I punti sono esclusivamente locali e non vengono inviati a RetroAchievements.
 
 Le notifiche sono finestre desktop: in alcune modalità di schermo intero potrebbero non apparire sopra il gioco. L'obiettivo viene comunque salvato e mostrato nell'app. La prova di notifica è riuscita nella configurazione corrente dell'utente.
 
 ## Sviluppo
 
-Il codice è in `src/`. È C# 5 / .NET Framework x64, senza pacchetti NuGet. L'interfaccia è in `MainForm.Ui.cs`, `Theme.cs`, `Banner.cs` e `Notification.cs`. Il font Nunito di `assets/fonts/` viene incorporato nell'eseguibile da `build.ps1`.
+Il codice è in `src/`. È C# 5 / .NET Framework x64, senza pacchetti NuGet. L'interfaccia è in `MainForm.Ui.cs`, `MainForm.Library.cs`, `Theme.cs`, `Banner.cs` e `Notification.cs`. Il font Nunito di `assets/fonts/` viene incorporato nell'eseguibile da `build.ps1`.
 
-L'eseguibile di questo pacchetto alpha 0.2 è stato compilato con Mono (`mcs`, livello C# 5) su Linux e non è ancora stato provato su Windows. Se non parte o la grafica non è corretta, ricompila con `build.ps1` (vedi sotto). È la via di compilazione ufficiale.
+L'eseguibile del precedente pacchetto alpha 0.2 è stato compilato con Mono (`mcs`, livello C# 5) su Linux e non è ancora stato provato su Windows. Se non parte o la grafica non è corretta, ricompila con `build.ps1` (vedi sotto). È la via di compilazione ufficiale.
 
 Per ricompilare, chiudi l'app e avvia da PowerShell:
 
@@ -116,6 +129,10 @@ Per i test:
 ```powershell
 .\tests\run.ps1
 ```
+
+La suite ora distingue i test portabili del motore dalle prove native Win32. Su Linux/macOS con Mono usa `bash tests/run.sh`; le prove Win32 vengono saltate esplicitamente. Per esercitare interfaccia, catalogo e pausa in una cartella temporanea su Windows, usa `powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\run-ui.ps1`.
+
+Il workflow GitHub Actions compila e prepara il pacchetto su Windows, esegue la suite completa e i controlli dell’interfaccia senza Cemu. Il suo esito va letto sulla singola esecuzione: non certifica il funzionamento nel gioco.
 
 I test coprono byte order, valori impossibili, baseline, transizioni stabili, spike, interruzioni, persistenza, profili distinti, recupero da corruzione e integrazione Win32 con un processo figlio sintetico che riserva 4 GiB. Nessun test scrive nella memoria di Cemu.
 

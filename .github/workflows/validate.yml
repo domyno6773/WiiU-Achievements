@@ -1,0 +1,31 @@
+name: Build and validate Windows app
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, test engine and Win32 reader, verify package
+        run: .\package.ps1 -DestinationPath "$env:RUNNER_TEMP\WiiUAchievements-alpha-0.3.zip"
+      - name: Exercise catalog, keyboard navigation and pause without Cemu
+        run: .\tests\run-ui.ps1 -OutputDirectory "$env:RUNNER_TEMP\WiiUAchievements-ui"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiUAchievements-alpha-0.3
+          path: ${{ runner.temp }}/WiiUAchievements-alpha-0.3.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-previews
+          path: ${{ runner.temp }}/WiiUAchievements-ui/previews/*.png
+          if-no-files-found: ignore
