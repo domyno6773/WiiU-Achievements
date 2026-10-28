@@ -27,3 +27,8 @@ These instructions apply to this entire project. Read `HANDOFF.md` first, then
 - Update `docs/VALIDATION.md` with what was actually checked, and update the
   handoff/roadmap when the supported configuration or next task changes.
 - Read `docs/COLLABORATION.md` before combining contributions from other agents.
+- The UI is custom-drawn (`docs/UI.md`). Keep artwork and sounds original and
+  code-generated. Do not add Nintendo images, logos, Miis, sounds or system fonts.
+  The only third-party asset is Nunito (SIL OFL 1.1): keep `assets/fonts/OFL.txt`.
+- UI state must not change engine, memory or persistence semantics. Keep sampling
+  in `MainForm.cs` and presentation in `MainForm.Ui.cs`.

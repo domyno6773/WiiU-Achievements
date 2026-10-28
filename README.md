@@ -1,6 +1,17 @@
-# Wii U Achievements — alpha 0.1
+# Wii U Achievements — alpha 0.2
 
 Applicazione Windows indipendente, scritta da zero. Primo gioco: **The Legend of Zelda: The Wind Waker HD**, edizione EUR v0, su **Cemu 2.6**.
+
+![Finestra principale](docs/screenshots/main.png)
+
+**Novità dell'alpha 0.2:** l'interfaccia è stata ridisegnata nello stile dei menu di sistema Wii U, con animazioni:
+
+- banner del gioco con mare in cel-shading animato;
+- anello di completamento e medaglie bronzo/argento/oro/platino;
+- schede degli obiettivi con barra di avanzamento e cursore di selezione azzurro;
+- notifica di sblocco animata, con un jingle originale.
+
+Tutta la grafica è disegnata dal codice, senza file Nintendo. I dettagli tecnici sono in [docs/UI.md](docs/UI.md).
 
 ## Per altre AI o sviluppatori
 
@@ -22,7 +33,7 @@ sorgenti, ma deve lasciare le prove Win32 e sul gioco a un ambiente Windows.
 
 1. Avvia il gioco in Cemu e carica la partita.
 2. Apri `WiiUAchievements.exe` dalla stessa cartella di `achievements.xml`.
-3. Seleziona il percorso di `Cemu.exe`, scegli un profilo locale e premi **Collega Cemu**.
+3. Apri **Impostazioni** (icona a ingranaggio in alto a destra). Seleziona il percorso di `Cemu.exe` e scegli un profilo locale. Poi chiudi il pannello con **Indietro** e premi **Collega Cemu**.
 4. Lascia aperta l'app mentre giochi. Puoi ridurla a icona.
 
 Nella copia locale il percorso della tua installazione è già salvato. Il pacchetto
@@ -37,9 +48,25 @@ Non servono Python, AutoHotkey, EmuHook, un account o una connessione Internet. 
 - Individuazione automatica della base di memoria Wii U, anche quando cambia tra gli avvii.
 - Lettura in tempo reale di rupie, vita attuale e capacità dei cuori.
 - Dieci obiettivi iniziali definiti nel file XML, su rupie e capacità di vita.
-- Notifiche desktop con suono opzionale, senza prendere il focus del gioco.
+- Notifica di sblocco animata in alto al centro, sullo schermo dove si trova Cemu. Non prende il focus del gioco e lascia passare i clic. Il jingle si può disattivare.
+- Interfaccia in stile Wii U. Filtri: tutti, sbloccati, da sbloccare. Facendo clic su un obiettivo si apre la scheda di dettaglio. Il registro attività si apre dall'icona a elenco.
 - Punti locali e progressi salvati tra le sessioni.
 - Demo con dati e progressi separati da quelli reali.
+
+## Interfaccia e comandi
+
+- Su ogni scheda c'è lo stato dell'obiettivo: sbloccato con data, avanzamento in tempo reale, oppure «Soglia già superata al collegamento». In quest'ultimo caso l'obiettivo non si sblocca finché il valore non scende sotto la soglia e poi la raggiunge di nuovo.
+- **Impostazioni:** percorso di Cemu, profilo locale e suono di sblocco. Contiene anche le animazioni del banner e il pulsante **Prova notifica**, utile per controllare che la notifica compaia sopra il gioco nella tua modalità a schermo intero.
+- Le animazioni di sfondo si fermano quando la finestra non è attiva, quindi non consumano CPU mentre giochi.
+
+| Tasto | Azione |
+| --- | --- |
+| Frecce / Tab | Spostano il cursore azzurro tra schede e pulsanti |
+| Invio / Spazio | Attivano l'elemento selezionato |
+| A | Collega Cemu |
+| X | Prova demo |
+| Y | Scollega |
+| B / Esc | Chiude dettaglio, impostazioni o registro |
 
 **È una prima alpha funzionante, non un set completo per Wind Waker HD.** Inventario, storia, dungeon, boss, collezionabili e sfide senza danni sono ancora da sviluppare e validare.
 
@@ -70,7 +97,9 @@ Le notifiche sono finestre desktop: in alcune modalità di schermo intero potreb
 
 ## Sviluppo
 
-Il codice è in `src/`. È C# 5 / .NET Framework x64, senza pacchetti di terze parti.
+Il codice è in `src/`. È C# 5 / .NET Framework x64, senza pacchetti NuGet. L'interfaccia è in `MainForm.Ui.cs`, `Theme.cs`, `Banner.cs` e `Notification.cs`. Il font Nunito di `assets/fonts/` viene incorporato nell'eseguibile da `build.ps1`.
+
+L'eseguibile di questo pacchetto alpha 0.2 è stato compilato con Mono (`mcs`, livello C# 5) su Linux e non è ancora stato provato su Windows. Se non parte o la grafica non è corretta, ricompila con `build.ps1` (vedi sotto). È la via di compilazione ufficiale.
 
 Per ricompilare, chiudi l'app e avvia da PowerShell:
 
@@ -95,9 +124,10 @@ Il lettore di produzione apre il processo con `PROCESS_QUERY_INFORMATION | PROCE
 ## Riferimenti tecnici
 
 - [Cemu 2.6 — MMU.cpp](https://github.com/cemu-project/Cemu/blob/v2.6/src/Cafe/HW/MMU/MMU.cpp): riserva contigua di 4 GiB e traduzione degli indirizzi guest.
+- [Nunito](https://github.com/googlefonts/nunito): font usato dall'interfaccia, © The Nunito Project Authors, SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
 - [Mappatura pubblica dei dati di Wind Waker HD](https://github.com/jamesst20/ZeldaWindWakerTrainer-for-CEMU/blob/master/ZeldaWindWakerTrainer/GameOffsets.cs): riferimento per gli indirizzi iniziali di cuori e rupie, verificati poi sulla partita reale.
 
-Il programma è un'implementazione originale. Non incorpora EmuHook, altri trainer, codice di gioco o file di Nintendo.
+Il programma è un'implementazione originale. Non incorpora EmuHook, altri trainer, codice di gioco o file di Nintendo. Lo stile grafico richiama i menu Wii U, ma icone, medaglie, banner e suono sono creati dal codice.
 
 Per trasferire i tuoi progressi, chiudi l'app e copia separatamente
 `data/progress/` nella nuova cartella. Mantieni lo stesso nome del profilo locale.

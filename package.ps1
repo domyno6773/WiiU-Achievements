@@ -14,7 +14,10 @@ try {
     # cannot accidentally enter an archive simply because they are in the folder.
     $names = @('AGENTS.md', 'HANDOFF.md', 'README.md', 'NEXT-STEPS.md', '.gitignore',
         'build.ps1', 'package.ps1', 'verify-package.ps1',
-        'src\Core.cs', 'src\GameSession.cs', 'src\MainForm.cs', 'src\MemoryReader.cs', 'src\Program.cs',
+        'src\Core.cs', 'src\GameSession.cs', 'src\MainForm.cs', 'src\MainForm.Ui.cs', 'src\MemoryReader.cs', 'src\Program.cs',
+        'src\Theme.cs', 'src\Banner.cs', 'src\Notification.cs',
+        'assets\fonts\Nunito-Regular.ttf', 'assets\fonts\Nunito-Bold.ttf', 'assets\fonts\Nunito-ExtraBold.ttf', 'assets\fonts\OFL.txt',
+        'docs\UI.md', 'docs\screenshots\main.png', 'docs\screenshots\unlock.png', 'docs\screenshots\detail.png', 'docs\screenshots\settings.png', 'docs\screenshots\toast.png',
         'tests\CoreTests.cs', 'tests\Probe.cs', 'tests\run.ps1',
         'docs\ARCHITECTURE.md', 'docs\MEMORY-MAP.md', 'docs\VALIDATION.md', 'docs\COLLABORATION.md',
         '.cursor\rules\project.mdc')
@@ -37,7 +40,7 @@ try {
     $manifest = [ordered]@{
         schemaVersion = 1
         project = 'Wii U Achievements'
-        version = 'alpha-0.1'
+        version = 'alpha-0.2'
         generatedAtUtc = [DateTime]::UtcNow.ToString('o')
         testsPassedDuringPackaging = (-not $SkipTests.IsPresent)
         personalDataIncluded = $false

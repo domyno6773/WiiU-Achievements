@@ -17,6 +17,8 @@ namespace WiiUAchievements
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+                var toastPreview = args.FirstOrDefault(a => a.StartsWith("--preview-toast="));
+                if (toastPreview != null) { SaveToastPreview(Path.GetFullPath(toastPreview.Substring(16))); return 0; }
                 string instance;
                 using (var sha = SHA256.Create()) instance = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(AppDomain.CurrentDomain.BaseDirectory))).Replace("-", "").Substring(0, 24);
                 bool first;
@@ -42,6 +44,14 @@ namespace WiiUAchievements
                 MessageBox.Show(ex.Message, "Wii U Achievements", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
+        }
+        // Developer aid: one frame of the unlock popup, rendered without showing a window.
+        static void SaveToastPreview(string path)
+        {
+            var rules = AchievementSet.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "achievements.xml"));
+            var sample = rules.OrderByDescending(a => a.Points).First();
+            using (var frame = ToastForm.Render(sample, Art.For(sample, rules), "OBIETTIVO SBLOCCATO", 1.45f, 1))
+                frame.Save(path, System.Drawing.Imaging.ImageFormat.Png);
         }
     }
 }

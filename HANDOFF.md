@@ -16,6 +16,14 @@ Cemu. It reads rupees and hearts, evaluates ten simple threshold achievements,
 shows a desktop notification, and persists local progress. It is not integrated
 with RetroAchievements accounts or servers.
 
+**Alpha 0.2 (2026-10-28)** replaces the plain WinForms controls with a
+custom-drawn, animated interface in the style of the Wii U system menus. It
+also adds a layered, click-through unlock popup and a synthesised chime. Session,
+engine, memory and persistence semantics are unchanged. The achievement IDs and
+set revision are unchanged too. See `docs/UI.md`. This UI was built and
+visually checked only on Linux with Mono (see `docs/VALIDATION.md`). **It has not
+yet been run on Windows.
+
 The first live unlock, **Primi spiccioli** at 10 rupees, was confirmed by the user
 on 2026-10-28. It remained unlocked after closing and reopening this application.
 That test did **not** restart Cemu. See `docs/VALIDATION.md` for the evidence and
@@ -77,7 +85,10 @@ Roaming/Local AppData Cemu directories.
 Source entry points:
 
 - `src/Program.cs`: GUI entry point and single-instance guard per app folder.
-- `src/MainForm.cs`: UI, attach sequence, 100 ms timer, demo, and notifications.
+- `src/MainForm.cs`: attach sequence, 100 ms sampling timer, demo, settings, toast queue.
+- `src/MainForm.Ui.cs`: custom-drawn window, layout, animations, input, accessibility.
+- `src/Theme.cs`, `src/Banner.cs`: palette, embedded Nunito font, vector icons/medals, sea banner.
+- `src/Notification.cs`: layered unlock popup and synthesised chime.
 - `src/GameSession.cs`: identification from the active Cemu log.
 - `src/MemoryReader.cs`: process reader, guest-base discovery, calibration scanner.
 - `src/Core.cs`: snapshot parsing, rules, achievement engine, XML progress store.
@@ -86,6 +97,16 @@ Source entry points:
 - `tests/Probe.cs`: small optional live-memory diagnostic; not the app entry point.
 
 ## Recommended next task
+
+**First, on Windows, validate the alpha 0.2 interface.** Run `build.ps1` and
+`tests\run.ps1`, then start `--demo`. Check:
+
+- fonts, layout and DPI;
+- the layered popup over Cemu, including in fullscreen;
+- the chime, the keyboard navigation and screen-reader names.
+
+Record the results in `docs/VALIDATION.md`. The shipped EXE was compiled with
+Mono `mcs`, so rebuild it with `build.ps1`.
 
 **Distinguish active gameplay, menus, loading, and save slots before adding story
 achievements.** The current app reads persistent save values without proving

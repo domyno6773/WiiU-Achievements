@@ -73,6 +73,65 @@ The manifest is not signed and does not establish the author's identity. Rebuild
 or edit a packaged file and its old hash will no longer match. Repackage after
 intentional changes. Newly generated local `data/` is not a manifest entry.
 
+## Alpha 0.2 interface checks (2026-10-28, Linux only)
+
+Environment: an Ubuntu 24.04 cloud container with Mono 6.8 (`mcs -langversion:5
+-platform:x64`), libgdiplus and Xvfb (1400×1000). Windows, Cemu and the game
+were not available.
+
+Checked:
+
+- All sources compile at the C# 5 language level. The build uses the
+  `build.ps1` references plus `Accessibility.dll`, and embeds the three Nunito
+  resources. `tests/CoreTests.cs` still compiles against `Core.cs` and
+  `MemoryReader.cs`. It was not executed, because its Win32 fixture needs
+  Windows. `Core.cs`, `GameSession.cs` and `MemoryReader.cs` are byte-identical
+  to alpha 0.1.
+- Demo mode, driven with xdotool and screenshotted:
+  - idle state and the staggered tile intro;
+  - live progress bars;
+  - the first unlock: "Verifica…" during the 3-sample confirmation, the tile
+    celebration, the ring going from 0 to 10%, and the popup;
+  - the 4-heart unlock at 16 quarters;
+  - filters, the detail dialog and the log drawer;
+  - the settings panel, with fields read-only during the demo and the toggles;
+  - Tab, arrow, Enter, B and Y keyboard handling;
+  - disconnect, which clears the demo progress from view.
+- `--preview` and `--preview-toast` write PNGs.
+- `Chime.Build()` returns a valid 1.3 s, mono, 16-bit, 44.1 kHz WAV with a 0.42
+  peak and a smooth decay. This was checked numerically; nobody listened to it.
+
+Mono-specific observations. They are not reproduced on .NET, but recheck them
+on Windows:
+
+- libgdiplus draws fonts added with `PrivateFontCollection.AddMemoryFont` as
+  empty boxes. Under Mono the app therefore uses an installed "Nunito" family,
+  which is how the screenshots were taken. On .NET the embedded fonts are used,
+  but that path has not been run.
+- During banner-only partial repaints, Mono sometimes shows stale back-buffer
+  pixels in a 12 px band above the bottom bar. WinForms on Windows clips the
+  paint DC to the update region. Confirm this visually.
+- Only the non-layered fallback popup ran on Linux. The `UpdateLayeredWindow`
+  path has never been executed.
+
+Not verified for alpha 0.2:
+
+- Anything on Windows:
+  - the `build.ps1` csc build and the 16-check suite;
+  - embedded-font and ClearType rendering, DPI scaling and text-box placement;
+  - the layered popup over windowed and fullscreen Cemu, and its placement on
+    multiple monitors;
+  - `SoundPlayer` playback;
+  - screen-reader output;
+  - CPU use while playing.
+- The included `WiiUAchievements.exe`, which was compiled with Mono `mcs` and has
+  never been launched on Windows. Rebuild it with `build.ps1`.
+- A live game session with the new UI. The connect, sample and disconnect code
+  is the alpha 0.1 logic, but the UI around it is new.
+- Packaging. The alpha 0.2 archive was assembled on Linux by a script that copies
+  the `package.ps1` allowlist and manifest format. Neither `package.ps1` nor
+  `verify-package.ps1` was run.
+
 ## Not yet verified
 
 - The fixed guest header across multiple real Cemu restarts or a full game run.

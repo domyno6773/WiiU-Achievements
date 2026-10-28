@@ -3,7 +3,7 @@
 ## Runtime flow
 
 `Program.Main` enables WinForms and holds a named mutex derived from the app
-folder. `MainForm` loads `achievements.xml`, then waits for a connection request
+folder (`--preview-toast=<png>` renders one popup frame and exits before that). `MainForm` loads `achievements.xml`, then waits for a connection request
 (or connects on `--connect`). `--demo` supplies synthetic snapshots with its own
 progress directory. `--preview=<absolute PNG path>` closes the UI after rendering
 an internal preview; it is a developer aid, not a game screenshot facility.
@@ -20,7 +20,10 @@ On connection, `MainForm.Connect`:
    starts a WinForms timer with a nominal interval of 100 ms.
 
 Each tick reads a snapshot, runs the engine, persists any awards, updates the UI,
-and queues notifications. The title fingerprint and memory base are rechecked
+and queues notifications. The interface is custom-drawn (`MainForm.Ui.cs`,
+`Theme.cs`, `Banner.cs`, `Notification.cs`). Its rendering model, animation timer,
+input map and asset policy are described in `docs/UI.md`. UI state never feeds
+back into the engine. The title fingerprint and memory base are rechecked
 from the log approximately once per second. Failures disconnect the reader and
 reset pending conditions. They do not erase saved unlocks.
 
@@ -65,7 +68,8 @@ This is polling of persistent state, not event hooks or frame-perfect tracking.
 
 All paths are relative to the executable folder:
 
-- `data/settings.xml`: local Cemu path and profile name.
+- `data/settings.xml`: local Cemu path, profile name and the optional `sound` and
+  `ambient` UI toggles. Missing toggles default to enabled.
 - `data/progress/<key>.xml`: earned IDs with UTC timestamps.
 - `data/demo/<random ID>/`: isolated synthetic-session progress.
 
@@ -98,6 +102,9 @@ boundaries. Retain existing progress IDs.
 For game-state/save-slot detection, introduce explicit validity/identity in the
 snapshot/monitoring boundary. Reset the engine when a transition invalidates
 continuity. Avoid embedding all future event logic in WinForms timer handlers.
+
+The build embeds `assets/fonts/*.ttf` as resources and references
+`Accessibility.dll` for the custom accessible objects.
 
 The profile constants currently live in `MainForm.Connect`; moving them into an
 explicit versioned profile type is reasonable preparatory work. The GUI and
