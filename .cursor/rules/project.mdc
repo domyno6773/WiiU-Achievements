@@ -1,0 +1,9 @@
+---
+description: Entry point and invariants for Wii U Achievements development
+alwaysApply: true
+---
+
+Read `AGENTS.md` and `HANDOFF.md` at the project root before making changes.
+They describe the user's requirements, build/test commands, verified findings,
+limitations, and the next work. Preserve read-only process access and the
+independent implementation without EmuHook. Keep personal data out of packages.

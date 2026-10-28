@@ -1,0 +1,8 @@
+data/
+*.pdb
+*.tmp
+*.bak
+test-results/
+build-check/
+WiiUAchievements.exe
+package-manifest.json

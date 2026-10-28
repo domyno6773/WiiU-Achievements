@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<achievement-set revision="wwhd-alpha-1" game="The Wind Waker HD" status="experimental">
+  <achievement id="wallet-10" title="Primi spiccioli" description="Passa da meno di 10 ad almeno 10 rupie nel portafoglio." field="rupees" threshold="10" points="1" />
+  <achievement id="wallet-100" title="Un piccolo tesoro" description="Passa da meno di 100 ad almeno 100 rupie nel portafoglio." field="rupees" threshold="100" points="5" />
+  <achievement id="wallet-200" title="Una borsa tintinnante" description="Passa da meno di 200 ad almeno 200 rupie nel portafoglio." field="rupees" threshold="200" points="5" />
+  <achievement id="wallet-500" title="Il tesoro del marinaio" description="Passa da meno di 500 ad almeno 500 rupie nel portafoglio." field="rupees" threshold="500" points="10" />
+  <achievement id="wallet-1000" title="Un mare di rupie" description="Passa da meno di 1000 ad almeno 1000 rupie nel portafoglio." field="rupees" threshold="1000" points="10" />
+  <achievement id="hearts-4" title="Un cuore in più" description="Porta la capacità di vita da meno di 4 ad almeno 4 cuori." field="max_health" threshold="16" points="5" />
+  <achievement id="hearts-6" title="Cuore d'avventura" description="Porta la capacità di vita da meno di 6 ad almeno 6 cuori." field="max_health" threshold="24" points="10" />
+  <achievement id="hearts-10" title="Sempre più coraggioso" description="Porta la capacità di vita da meno di 10 ad almeno 10 cuori." field="max_health" threshold="40" points="10" />
+  <achievement id="hearts-15" title="Il coraggio cresce" description="Porta la capacità di vita da meno di 15 ad almeno 15 cuori." field="max_health" threshold="60" points="15" />
+  <achievement id="hearts-20" title="Un cuore leggendario" description="Raggiungi 20 cuori di capacità partendo da una capacità inferiore." field="max_health" threshold="80" points="25" />
+</achievement-set>
