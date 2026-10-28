@@ -38,8 +38,29 @@ The four native Win32 fixture assertions are explicitly skipped by `--portable`.
 `tests/run.ps1` still runs the full suite on Windows; `tests/run-ui.ps1` compiles
 and exercises the application in an isolated temporary folder. GitHub Actions
 is configured to run both, build and verify a new alpha 0.3 package, and retain
-the ZIP and UI previews. Windows CI results must be recorded from the actual run,
-not inferred from the Linux results above.
+the ZIP and UI previews. The actual Windows result is recorded below.
+
+### Windows CI (2026-10-28)
+
+Code commit `a66789f290b9c9702575da2c7e6d598ba526ec53` passed
+[workflow run 40764665750](https://github.com/hoffo1987/WiiU-Achievements/actions/runs/40764665750)
+on GitHub's Windows Server 2025 runner:
+
+- Official .NET Framework x64 compiler, explicitly C# 5: application, core suite
+  and isolated UI suite compiled successfully, with embedded Nunito resources.
+- **50 core/integration checks passed**, including all four native Win32 fixture
+  assertions for the synthetic child-process reservation, scanner and live reads.
+- **22 UI checks passed** on Windows, without Cemu or any game files.
+- `package.ps1` and `verify-package.ps1` succeeded; the manifest verified **47
+  files**. The Windows-built ZIP and seven UI preview PNGs are downloadable as
+  workflow artifacts.
+- Downloaded and visually inspected Windows main, catalog, paused and
+  minimum-size catalog previews. The original visual style is retained, with
+  the new catalog and pause controls using the existing theme. Long achievement
+  labels use the existing ellipsis behavior at narrower window widths.
+
+These are build, synthetic integration and UI results. They do not verify a live
+Cemu session, the user's display setup or fullscreen notification behavior.
 
 Still pending: real Cemu thresholds and pause/load/resume, emulator restarts,
 fullscreen popup, multi-monitor behavior, actual audio, DPI/screen-reader

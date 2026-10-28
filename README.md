@@ -134,6 +134,8 @@ La suite ora distingue i test portabili del motore dalle prove native Win32. Su 
 
 Il workflow GitHub Actions compila e prepara il pacchetto su Windows, esegue la suite completa e i controlli dell’interfaccia senza Cemu. Il suo esito va letto sulla singola esecuzione: non certifica il funzionamento nel gioco.
 
+La prima verifica dell’alpha 0.3 su Windows è riuscita: **50 controlli sul motore e sulle API Win32, 22 sull’interfaccia**, pacchetto con 47 file verificati. L’eseguibile Windows e le anteprime si trovano negli artifact della [verifica su GitHub](https://github.com/hoffo1987/WiiU-Achievements/actions/runs/40764665750). Restano da provare gli sblocchi reali e pausa/caricamento/ripresa su Cemu.
+
 I test coprono byte order, valori impossibili, baseline, transizioni stabili, spike, interruzioni, persistenza, profili distinti, recupero da corruzione e integrazione Win32 con un processo figlio sintetico che riserva 4 GiB. Nessun test scrive nella memoria di Cemu.
 
 Il lettore di produzione apre il processo con `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`. Non contiene API di scrittura, injection o modifica dei salvataggi. Il rilevamento della base segue la struttura di allocazione documentata dal codice di Cemu. Lo scanner di calibrazione è disponibile nel codice e verificato dai test, ma non è ancora esposto nell'interfaccia: questa prima build usa il profilo EUR confermato.

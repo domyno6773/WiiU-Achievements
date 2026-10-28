@@ -31,6 +31,11 @@ rules, IDs, XML path, progress identity and revision are unchanged. No game
 memory mappings or new achievements were added. See `docs/GAMES.md` and the
 alpha 0.3 record in `docs/VALIDATION.md` for current evidence.
 
+The alpha 0.3 code also passed Windows CI: official C# 5/.NET Framework x64 build,
+50 core/Win32 checks, 22 UI checks, and a 47-file verified package. The workflow
+artifacts contain a Windows-built EXE. This does not replace live Cemu tests on
+the user's PC. See the linked run in `docs/VALIDATION.md`.
+
 The first live unlock, **Primi spiccioli** at 10 rupees, was confirmed by the user
 on 2026-10-28. It remained unlocked after closing and reopening this application.
 That test did **not** restart Cemu. See `docs/VALIDATION.md` for the evidence and
