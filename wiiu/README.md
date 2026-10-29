@@ -1,0 +1,45 @@
+# Wii U Achievements — native console port (development)
+
+This directory belongs to the **wiiu-native** branch of the upstream WiiU-Achievements project. It is a port of the existing Windows application, **not an independent achievements product**.
+
+## Non-negotiable boundaries
+
+- Do not commit to, merge into, force-push or modify upstream `main`.
+- Preserve original achievements, stable IDs, set revisions, categories, rarities, display text and progress semantics. Never silently award existing milestones.
+- Keep the original Windows `src/`, root XML and Windows scripts intact. Follow upstream changes deliberately and verify compatibility before importing them.
+- Read-only monitoring of title memory. No patches to game executable, save editing or modification of game state.
+- No proprietary Nintendo assets, system sounds, ROMs, keys, dumps or user progress in the repository.
+- Evidence from Cemu is not evidence of correct behavior on real hardware; experimental flags remain experimental.
+
+## Target environment
+
+- Nintendo Wii U with Aroma.
+- Frontend: native `.wuhb` app visible in the Wii U Menu (via Homebrew on Menu).
+- Background monitor: WUPS `.wps` plugin loaded by Aroma.
+- Development: devkitPro/devkitPPC, wut and Wii U Plugin System; evaluate libnotifications/NotificationModule for toast delivery.
+- A shared portable achievements core and shared serialized rule identifiers, not two unrelated achievement engines.
+
+No Wii U binary is shipped yet. This directory is the foundation for the port; **neither memory inspection nor in-game overlays have been validated on physical hardware**.
+
+## Proposed source layout
+
+- `app/`: Wii U native catalog, game details, settings and achievements UI.
+- `plugin/`: title lifecycle, read-only state sampler and notification dispatch.
+- `core/`: portable implementation of upstream rules, unlock state and progress I/O.
+- `graphics/`: original UI geometry, color and animation specifications adapted from the Windows project.
+- `tests/`: cross-platform contract and conformance tests against upstream fixtures.
+- `docs/`: port strategy, parity matrix, build/install instructions and real-hardware evidence.
+
+Directories will be added as implementation begins. Avoid placeholder source files or pretend-build artifacts.
+
+## First deliverables
+
+1. Obtain a reproducible wut + WUPS toolchain and compile a minimal `.wuhb` and `.wps` independently.
+2. Create a golden behavior test suite by extracting representative upstream `Core.cs` cases.
+3. Render the frontend with pixel/behavior references from `docs/UI.md`.
+4. Validate notification functionality with a **manual test toast only** before attaching to a game.
+5. Research game lifecycle, title identity and safe memory reads on a real Wii U; only then add the first live Wind Waker milestone.
+
+Build and deployment instructions must be tested before they are marked as working.
+
+See [the port architecture](docs/ARCHITECTURE.md) and [compatibility contract](docs/COMPATIBILITY.md).
