@@ -15,9 +15,10 @@ namespace WiiUAchievements
 
     public sealed class WindWakerMemoryReader : IGameMemoryReader
     {
+        public static int HeroClothesFromFlags(byte flags) { return (flags & 0x80) != 0 ? 1 : 0; }
         public GameSnapshot Read(ProcessMemory memory, ulong guestBase)
         {
-            return GameSnapshot.Parse(memory.Read(checked(guestBase + 0x145B7B80U), 6));
+            return WindWakerProgression.Parse(memory.Read(checked(guestBase + WindWakerProgression.SaveAddress), WindWakerProgression.ReadSize));
         }
     }
 
@@ -52,17 +53,29 @@ namespace WiiUAchievements
         public string Title { get; private set; }
         public string Description { get; private set; }
         public string RulesFile { get; private set; }
+        public string PendingFile { get; private set; }
+        public string ExtraRulesFile { get; private set; }
+        public string PresentationFile { get; private set; }
         public string SetRevision { get; private set; }
         public ReadOnlyCollection<GameProfile> Profiles { get; private set; }
         public bool Available { get { return Profiles.Count > 0; } }
 
         public GameDefinition(string id, string title, string description, string rulesFile, string revision, params GameProfile[] profiles)
+            : this(id, title, description, rulesFile, revision, null, profiles) { }
+        public GameDefinition(string id, string title, string description, string rulesFile, string revision, string pendingFile, params GameProfile[] profiles)
+            : this(id, title, description, rulesFile, revision, pendingFile, null, profiles) { }
+        public GameDefinition(string id, string title, string description, string rulesFile, string revision, string pendingFile, string extraRulesFile, params GameProfile[] profiles)
+            : this(id, title, description, rulesFile, revision, pendingFile, extraRulesFile, null, profiles) { }
+        public GameDefinition(string id, string title, string description, string rulesFile, string revision, string pendingFile, string extraRulesFile, string presentationFile, params GameProfile[] profiles)
         {
             if (String.IsNullOrWhiteSpace(id) || String.IsNullOrWhiteSpace(title) || profiles == null || profiles.Any(p => p == null))
                 throw new ArgumentException("Voce del catalogo non valida.");
             if (profiles.Length > 0 && (String.IsNullOrWhiteSpace(rulesFile) || String.IsNullOrWhiteSpace(revision)))
                 throw new ArgumentException("Un gioco disponibile richiede un set achievement.");
             Id = id; Title = title; Description = description; RulesFile = rulesFile; SetRevision = revision;
+            PendingFile = pendingFile;
+            ExtraRulesFile = extraRulesFile;
+            PresentationFile = presentationFile;
             Profiles = Array.AsReadOnly((GameProfile[])profiles.Clone());
         }
         public GameProfile RequireProfile(GameSession session)
@@ -74,7 +87,21 @@ namespace WiiUAchievements
         public List<Achievement> LoadRules(string root)
         {
             if (!Available) throw new InvalidOperationException("Questo gioco non è ancora disponibile.");
-            return AchievementSet.Load(Path.Combine(root, RulesFile), SetRevision);
+            var loaded = AchievementSet.Load(Path.Combine(root, RulesFile), SetRevision);
+            if (ExtraRulesFile != null)
+            {
+                var extra = AchievementSet.Load(Path.Combine(root, ExtraRulesFile), SetRevision);
+                if (extra.Any(a => a.IsPlanned)) throw new InvalidDataException("Le regole aggiuntive devono essere attive.");
+                loaded.AddRange(extra);
+            }
+            if (loaded.Select(a => a.Id).Distinct().Count() != loaded.Count)
+                throw new InvalidDataException("ID achievement duplicati nei file attivi.");
+            var pending = PendingFile == null ? new List<Achievement>() : AchievementSet.Load(Path.Combine(root, PendingFile), SetRevision);
+            if (pending.Any(a => !a.IsPlanned) || loaded.Concat(pending).Select(a => a.Id).Distinct().Count() != loaded.Count + pending.Count)
+                throw new InvalidDataException("Catalogo da verificare non valido o con ID duplicati.");
+            var results = loaded.Concat(pending).ToList();
+            if (PresentationFile != null) AchievementPresentation.Apply(results, Path.Combine(root, PresentationFile), SetRevision);
+            return results.OrderBy(a => a.Order).ThenBy(a => a.Id, StringComparer.Ordinal).ToList();
         }
     }
 
@@ -83,7 +110,7 @@ namespace WiiUAchievements
         public const string WindWakerId = "wind-waker-hd";
         static readonly ReadOnlyCollection<GameDefinition> games = Array.AsReadOnly(new[] {
             new GameDefinition(WindWakerId, "The Wind Waker HD",
-                "Set iniziale sperimentale: rupie e capacità di vita.", "achievements.xml", AchievementSet.Revision,
+                "Obiettivi di storia, equipaggiamento, esplorazione e secondarie. Attivi e da verificare sono distinti.", "achievements.xml", AchievementSet.Revision, "achievements-planned.xml", "achievements-story.xml", "achievement-presentation.xml",
                 new GameProfile("EUR v0", "2.6", GameSession.EurTitleId, "v0", "cdc68acd", () => new WindWakerMemoryReader())),
             new GameDefinition("future-games", "Altri giochi", "Non ancora disponibili. Il catalogo si amplierà con i prossimi giochi supportati.", null, null)
         });

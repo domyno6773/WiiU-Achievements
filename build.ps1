@@ -16,5 +16,8 @@ $resources = @('Nunito-Regular.ttf', 'Nunito-Bold.ttf', 'Nunito-ExtraBold.ttf') 
 if ($LASTEXITCODE -ne 0) { throw 'Compilazione applicazione fallita.' }
 if ($output.TrimEnd('\') -ne $PSScriptRoot.TrimEnd('\')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'achievements.xml') -Destination $output -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'achievements-planned.xml') -Destination $output -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'achievements-story.xml') -Destination $output -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'achievement-presentation.xml') -Destination $output -Force
 }
 Write-Output ('Applicazione compilata: ' + (Join-Path $output 'WiiUAchievements.exe'))

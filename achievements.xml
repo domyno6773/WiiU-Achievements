@@ -10,4 +10,12 @@
   <achievement id="hearts-10" title="Sempre più coraggioso" description="Porta la capacità di vita da meno di 10 ad almeno 10 cuori." field="max_health" threshold="40" points="10" />
   <achievement id="hearts-15" title="Il coraggio cresce" description="Porta la capacità di vita da meno di 15 ad almeno 15 cuori." field="max_health" threshold="60" points="15" />
   <achievement id="hearts-20" title="Un cuore leggendario" description="Raggiungi 20 cuori di capacità partendo da una capacità inferiore." field="max_health" threshold="80" points="25" />
+  <!-- Additive extension: stable IDs/revision keep existing local progress. -->
+  <achievement id="wallet-2500" title="La fortuna del navigatore" description="Passa da meno di 2500 ad almeno 2500 rupie nel portafoglio." field="rupees" threshold="2500" points="15" />
+  <achievement id="wallet-5000" title="Il forziere è pieno" description="Passa da meno di 5000 a 5000 rupie nel portafoglio." field="rupees" threshold="5000" points="25" />
+  <achievement id="hearts-5" title="Pronto a salpare" description="Porta la capacità di vita da meno di 5 ad almeno 5 cuori." field="max_health" threshold="20" points="5" />
+  <achievement id="hearts-8" title="Tempra da marinaio" description="Porta la capacità di vita da meno di 8 ad almeno 8 cuori." field="max_health" threshold="32" points="10" />
+  <achievement id="hearts-12" title="Coraggio d'alto mare" description="Porta la capacità di vita da meno di 12 ad almeno 12 cuori." field="max_health" threshold="48" points="10" />
+  <achievement id="hearts-18" title="Quasi una leggenda" description="Porta la capacità di vita da meno di 18 ad almeno 18 cuori." field="max_health" threshold="72" points="15" />
+
 </achievement-set>

@@ -1,5 +1,22 @@
 # User interface (alpha 0.3)
 
+The expanded catalog adds a fourth status tab, **Da verificare**, and a category
+cycle button (**C**). The six categories are Storia, Equipaggiamento,
+Esplorazione, Collezioni, Secondarie and Crescita. Status and category filters
+combine. The ring and point total include only the 70 executable objectives,
+including 53 explicit experiments. The 40 pending cards display `?` instead of claimable points, an orange **Non attivo**
+label, and a detail explanation of the missing verification. Accessibility help
+includes the category, pending requirement and explicit absence of automatic
+unlocks. No pending card queries snapshot
+fields or changes recording state.
+
+**Tappa / F** cycles the chronological groups, independently of **Categoria / C**.
+The default list starts with the tunic, telescope, sword and shield and follows
+the approximate playthrough order; growth thresholds are at the end. Metadata
+never prevent free exploration. Experimental cards use a `*` in the points pill,
+explicit detail text and a marked unlock notification. They can unlock; pending
+cards cannot. The title banner identifies this build as **Playthrough TEST**.
+
 The window and the unlock popup are custom-drawn WinForms surfaces styled after
 the light Wii U system menus: a pale striped backdrop, white rounded cards, pill
 buttons with GamePad face-button glyphs (A/B/X/Y), a cyan selection cursor and a
@@ -26,6 +43,7 @@ cel-shaded sea banner for the game.
 | --- | --- |
 | `src/MainForm.cs` | Session logic: connect, demo, sampling, settings, toast queue. Catalog/profile routing, recording pause/resume and engine state updates. |
 | `src/MainForm.Ui.cs` | Layout, painting, animation timer, mouse/keyboard input and accessibility of the main window. |
+| `src/MainForm.Tiles.cs` | Bounded lazy bitmap cache for static achievement cards; live footers and animated cards remain dynamic. |
 | `src/MainForm.Library.cs` | Game catalog using the same rounded cards, sea artwork and input widgets. |
 | `src/Theme.cs` | Palette, fonts, easing, text helpers, rounded shapes, shadows, cursor and every vector icon/medal. `Art` maps a rule to its medal. |
 | `src/Banner.cs` | `OceanBanner`: cached sky layer plus animated clouds, swell rows, foam and sparkles. |
@@ -47,6 +65,15 @@ cel-shaded sea banner for the game.
   moves. Ambient motion (banner sea, status-dot pulse, focus pulse) runs only while
   this window is the active window and the setting is enabled. It pauses while
   the player is in Cemu, so it uses no CPU then.
+- Scrolling invalidates only the grid while other UI state is steady. Static
+  cards (background, shadow, medal, title, description, point pill) are rasterized
+  lazily at device resolution and reused. A 48-entry least-recently-used cache
+  bounds native bitmap memory and disposes replaced/evicted entries. Resize,
+  game selection and form disposal clear it. Unlock state changes rebuild the
+  corresponding image. Progress/status footers are drawn live every frame;
+  hovered/focused/pressed or celebrating cards retain vector animation. The
+  intro stagger counts viewport cards so scrolling far down a long list does
+  not introduce a delay proportional to the achievement's catalog index.
 - The sampling timer remains 100 ms. Pause stops it; resume establishes a new
   baseline. Per-rule confirmation and blocked states come directly from the engine.
 
@@ -57,7 +84,10 @@ cel-shaded sea banner for the game.
 - `rupees` → a faceted gem whose colour follows the rule's rank among rupee
   thresholds: green, blue, red, purple, gold, then silver.
 - `max_health` → a heart container with the heart count as a badge.
-- Ring tier by points: 1–9 bronze, 10–14 silver, 15–24 gold, 25+ platinum.
+- Medal tier comes from explicit editorial rarity, independently of points.
+  See `RARITIES.md`: 53 bronze, 47 silver, 10 gold; platinum is reserved for the
+  future set-completion trophy. The name appears below the medal and in the
+  detail pill, including when a rule is experimental or not active.
 - Locked medals are desaturated and carry a lock badge. Unlocked medals get a
   green check and a tier-tinted card.
 

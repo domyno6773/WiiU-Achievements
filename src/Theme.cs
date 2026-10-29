@@ -15,7 +15,7 @@ namespace WiiUAchievements
     public enum ArtKind { Gem, Heart }
     public enum Tier { Bronze, Silver, Gold, Platinum }
 
-    // Visual identity of one achievement, derived from its rule: no extra XML schema is needed.
+    // Medal rank is editorial metadata, independent of points and verification status.
     public sealed class Art
     {
         public ArtKind Kind;
@@ -25,8 +25,8 @@ namespace WiiUAchievements
         public static Art For(Achievement a, IList<Achievement> all)
         {
             var art = new Art { Kind = a.Field == "max_health" ? ArtKind.Heart : ArtKind.Gem };
-            art.Level = all.Count(x => x.Field == a.Field && x.Threshold < a.Threshold);
-            art.Tier = a.Points >= 25 ? Tier.Platinum : a.Points >= 15 ? Tier.Gold : a.Points >= 10 ? Tier.Silver : Tier.Bronze;
+            art.Level = all.Count(x => !x.IsPlanned && x.Field == a.Field && x.Threshold < a.Threshold);
+            art.Tier = (Tier)a.Rarity;
             art.Badge = art.Kind == ArtKind.Heart ? (a.Threshold / 4).ToString(CultureInfo.InvariantCulture) : null;
             return art;
         }

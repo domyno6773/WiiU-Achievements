@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<achievement-presentation revision="wwhd-alpha-1">
+  <entry id="wallet-10" rarity="bronze" order="1600" />
+  <entry id="wallet-100" rarity="bronze" order="1610" />
+  <entry id="wallet-200" rarity="bronze" order="1620" />
+  <entry id="wallet-500" rarity="bronze" order="1630" />
+  <entry id="wallet-1000" rarity="silver" order="1640" />
+  <entry id="hearts-4" rarity="bronze" order="1510" />
+  <entry id="hearts-6" rarity="bronze" order="1530" />
+  <entry id="hearts-10" rarity="silver" order="1550" />
+  <entry id="hearts-15" rarity="silver" order="1570" />
+  <entry id="hearts-20" rarity="gold" order="1590" />
+  <entry id="wallet-2500" rarity="silver" order="1650" />
+  <entry id="wallet-5000" rarity="silver" order="1660" />
+  <entry id="hearts-5" rarity="bronze" order="1520" />
+  <entry id="hearts-8" rarity="bronze" order="1540" />
+  <entry id="hearts-12" rarity="silver" order="1560" />
+  <entry id="hearts-18" rarity="silver" order="1580" />
+  <entry id="story-heros-clothes" rarity="bronze" />
+  <entry id="story-telescope" rarity="bronze" />
+  <entry id="story-hero-sword" rarity="bronze" description="Ottieni la prima spada dell'eroe." />
+  <entry id="story-hero-shield" rarity="bronze" />
+  <entry id="story-spoils-bag" rarity="bronze" description="Ottieni la borsa del bottino sulla nave dei pirati." />
+  <entry id="story-fortress-escape" rarity="bronze" />
+  <entry id="story-sail" rarity="bronze" description="Ottieni la vela normale di Re Drakar." />
+  <entry id="gear-picto-box" rarity="bronze" />
+  <entry id="gear-deluxe-picto" rarity="silver" description="Ottieni il potenziamento a colori della macchina fotografica." />
+  <entry id="gear-bait-bag" rarity="bronze" />
+  <entry id="story-wind-waker" rarity="bronze" />
+  <entry id="collect-winds-requiem" rarity="bronze" />
+  <entry id="gear-delivery-bag" rarity="bronze" />
+  <entry id="gear-grappling-hook" rarity="bronze" />
+  <entry id="story-din-pearl" rarity="silver" />
+  <entry id="gear-deku-leaf" rarity="bronze" />
+  <entry id="gear-boomerang" rarity="bronze" />
+  <entry id="story-farore-pearl" rarity="silver" />
+  <entry id="gear-bombs" rarity="bronze" description="Ottieni la borsa delle bombe." />
+  <entry id="story-nayru-pearl" rarity="silver" />
+  <entry id="side-grandma" rarity="bronze" />
+  <entry id="collect-command-melody" rarity="bronze" order="710" />
+  <entry id="gear-bow" rarity="bronze" order="720" />
+  <entry id="story-gohdan" rarity="silver" order="730" />
+  <entry id="story-master-sword" rarity="silver" description="Ottieni la Spada Suprema per la prima volta." />
+  <entry id="collect-ballad-gales" rarity="bronze" description="Impara la Melodia del Ciclone." />
+  <entry id="gear-skull-hammer" rarity="bronze" />
+  <entry id="story-helmaroc" rarity="silver" />
+  <entry id="story-zelda" rarity="silver" />
+  <entry id="gear-elemental-arrows" rarity="bronze" />
+  <entry id="gear-power-bracelets" rarity="bronze" />
+  <entry id="gear-iron-boots" rarity="bronze" />
+  <entry id="collect-earth-lyric" rarity="bronze" />
+  <entry id="gear-mirror-shield" rarity="bronze" order="1006" />
+  <entry id="story-jalhalla" rarity="silver" order="1007" />
+  <entry id="collect-wind-aria" rarity="bronze" />
+  <entry id="gear-hookshot" rarity="bronze" order="1103" />
+  <entry id="story-molgera" rarity="gold" order="1104" />
+  <entry id="story-triforce-first" rarity="bronze" />
+  <entry id="story-triforce-complete" rarity="gold" />
+  <entry id="story-hyrule-barrier" rarity="bronze" />
+  <entry id="story-light-arrows" rarity="bronze" />
+  <entry id="gear-swift-sail" rarity="silver" description="Ottieni la vela veloce." order="1400" />
+  <entry id="gear-magic-armor" rarity="silver" description="Ottieni l'armatura magica." order="1401" />
+  <entry id="gear-magic-double" rarity="silver" order="1402" />
+  <entry id="gear-bombs-99" rarity="silver" order="1403" />
+  <entry id="gear-arrows-99" rarity="silver" order="1404" />
+  <entry id="gear-wallet-max" rarity="silver" order="1405" />
+  <entry id="collect-song-passing" rarity="bronze" order="1428" />
+  <entry id="collect-songs-6" rarity="silver" order="1427" />
+  <entry id="collect-bottles-4" rarity="silver" order="1426" />
+  <entry id="explore-chart-10" rarity="bronze" order="1415" />
+  <entry id="explore-chart-25" rarity="silver" order="1414" />
+  <entry id="explore-chart-49" rarity="gold" order="1413" />
+  <entry id="story-tower-rises" rarity="silver" order="700" />
+  <entry id="story-medli-sage" rarity="silver" order="1005" />
+  <entry id="story-makar-sage" rarity="silver" order="1102" />
+  <entry id="story-puppet-ganon" rarity="silver" order="1310" />
+  <entry id="story-ganondorf" rarity="gold" order="1320" />
+  <entry id="explore-salvage-first" rarity="bronze" order="1416" />
+  <entry id="explore-salvage-10" rarity="silver" order="1412" />
+  <entry id="explore-salvage-46" rarity="gold" order="1411" />
+  <entry id="explore-ghost-ship" rarity="silver" order="1410" />
+  <entry id="explore-big-octo" rarity="bronze" order="1409" />
+  <entry id="explore-all-octos" rarity="silver" order="1408" />
+  <entry id="explore-savage-30" rarity="silver" order="1407" />
+  <entry id="explore-savage-50" rarity="gold" order="1406" />
+  <entry id="collect-heart-piece-first" rarity="bronze" order="1425" />
+  <entry id="collect-heart-pieces-12" rarity="silver" order="1423" />
+  <entry id="collect-heart-pieces-44" rarity="gold" order="1424" />
+  <entry id="collect-treasure-charts-10" rarity="bronze" order="1429" />
+  <entry id="collect-treasure-charts-25" rarity="silver" order="1422" />
+  <entry id="collect-treasure-charts-46" rarity="gold" order="1417" />
+  <entry id="collect-triforce-charts" rarity="silver" order="1421" />
+  <entry id="collect-tingle-statues-5" rarity="silver" order="1418" />
+  <entry id="collect-gallery-first" rarity="bronze" order="1419" />
+  <entry id="collect-gallery-complete" rarity="gold" order="1420" />
+  <entry id="side-killer-bees" rarity="bronze" />
+  <entry id="side-sinking-ships" rarity="bronze" />
+  <entry id="side-sinking-ships-20" rarity="silver" />
+  <entry id="side-mail-25" rarity="silver" />
+  <entry id="side-orca-500" rarity="silver" order="1439" />
+  <entry id="side-hurricane-spin" rarity="silver" order="1438" />
+  <entry id="side-cabana" rarity="silver" order="1437" />
+  <entry id="side-joy-pendants-40" rarity="silver" order="1435" />
+  <entry id="side-forest-water" rarity="silver" order="1436" />
+  <entry id="side-mila" rarity="bronze" order="1441" />
+  <entry id="side-maggie" rarity="bronze" order="1434" />
+  <entry id="side-lighthouse" rarity="bronze" order="1433" />
+  <entry id="side-flight-control" rarity="silver" order="1432" />
+  <entry id="side-spectacle" rarity="bronze" order="1431" />
+  <entry id="side-trading" rarity="silver" order="1430" />
+  <entry id="side-town-decoration" rarity="silver" order="1440" />
+  <entry id="side-golden-feathers" rarity="bronze" order="1442" />
+</achievement-presentation>

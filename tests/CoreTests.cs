@@ -41,6 +41,12 @@ class CoreTests
             byte[] header = { 0, 12, 0, 12, 0, 5 };
             Marshal.Copy(header, 0, new IntPtr(data.ToInt64() + 0xFFFFE), header.Length);
             Marshal.Copy(header, 0, new IntPtr(data.ToInt64() + 0x100), header.Length);
+            IntPtr savePage = new IntPtr(block.ToInt64() + 0x145B7000);
+            if (VirtualAlloc(savePage, (UIntPtr)0x2000U, 0x1000, 4) == IntPtr.Zero) return 4;
+            var save = new byte[WindWakerProgression.ReadSize]; save[1] = 12; save[3] = 12; save[4] = 1; save[5] = 65;
+            save[0x51] = 5; save[0xB4] = 1; save[0x64E] = 0x80;
+            for (int i = 0x4A; i <= 0x4D; i++) save[i] = 255;
+            Marshal.Copy(save, 0, new IntPtr(block.ToInt64() + WindWakerProgression.SaveAddress), save.Length);
             File.WriteAllText(file, block.ToInt64().ToString());
             Console.ReadLine();
             // Only the boundary candidate changes. This emulates a live value and its stale copy.
@@ -92,6 +98,7 @@ class CoreTests
             Check(recovered.Contains("one") && recovered.Warning != null && Directory.GetFiles(Path.Combine(temporary, "corrupt"), "*.damaged-*").Length == 1, "Corruption preserves original and recovers last backup");
 
             SystemTests.Run(Check, temporary, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "achievements.xml"));
+            ProgressionTests.Run(Check, temporary);
             if (!portable)
             {
             // Real Win32 integration: a separate process with a synthetic Cemu-style mapping.
@@ -108,6 +115,9 @@ class CoreTests
                 using (var memory = new ProcessMemory(child.Id))
                 {
                     Check(memory.FindGuestBases().Contains(address), "Detect separate process 4 GiB guest reservation");
+                    var decoded = new WindWakerMemoryReader().Read(memory, address);
+                    Check(decoded.Rupees == 321 && decoded.HeroClothes == 1 && decoded.Value("telescope") == 1 && decoded.Value("hero_sword") == 1,
+                        "Production progression reader applies guest-base translation to a synthetic two-page save block");
                     var hits = Calibration.Scan(memory, new Observation { MaxHealth = 12, Health = 12, Rupees = 5 }, CancellationToken.None, p => { });
                     Check(hits.Count == 2 && hits.Any(c => c.SaveAddress == 0x100FFFFE), "Scanner finds candidates across chunk boundary");
                     child.StandardInput.WriteLine("change"); child.StandardInput.Flush();

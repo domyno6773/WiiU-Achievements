@@ -226,9 +226,10 @@ namespace WiiUAchievements
             // Load successfully before changing selection. Existing progress on disk is untouched.
             var loaded = game.LoadRules(root);
             var loadedArt = loaded.ToDictionary(rule => rule.Id, rule => Art.For(rule, loaded));
+            ClearTileImages();
             selectedGame = game; rules = loaded; progress = null; engine = null; current = null;
             arts.Clear(); foreach (var pair in loadedArt) arts.Add(pair.Key, pair.Value);
-            celebrations.Clear(); filter = 0; scroll = scrollTarget = 0; tabX = -1;
+            celebrations.Clear(); filter = categoryFilter = chapterFilter = 0; scroll = scrollTarget = 0; tabX = -1;
             Text = "Wii U Achievements — " + game.Title;
         }
         void Tick(object sender, EventArgs e)
@@ -254,8 +255,8 @@ namespace WiiUAchievements
                 }
                 foreach (var a in engine.Update(sample))
                 {
-                    Log((demo ? "[DEMO] " : "") + "Sbloccato: " + a.Title + " (+" + a.Points + ")");
-                    toasts.Enqueue(new PendingToast { Achievement = a, Header = demo ? "DEMO · OBIETTIVO SBLOCCATO" : "OBIETTIVO SBLOCCATO" });
+                    Log((demo ? "[DEMO] " : a.Experimental ? "[TEST] " : "") + "Sbloccato: " + a.Title + " (+" + a.Points + ")");
+                    toasts.Enqueue(new PendingToast { Achievement = a, Header = demo ? "DEMO · OBIETTIVO SBLOCCATO" : a.Experimental ? "SBLOCCATO · SPERIMENTALE" : "OBIETTIVO SBLOCCATO" });
                     Celebrate(a); RefreshList();
                 }
                 UpdateStats(sample);
@@ -303,13 +304,14 @@ namespace WiiUAchievements
         }
         void UpdateStats(GameSnapshot s)
         {
-            bool changed = current == null || current.Rupees != s.Rupees || current.Health != s.Health || current.MaxHealth != s.MaxHealth;
+            bool changed = current == null || current.Rupees != s.Rupees || current.Health != s.Health || current.MaxHealth != s.MaxHealth || s.ProgressionDiffersFrom(current);
             if (engine != null && engineStateVersion != engine.StateVersion) { changed = true; engineStateVersion = engine.StateVersion; }
             current = s;
             if (changed) { Invalidate(); Kick(); }
         }
-        int UnlockedCount { get { return rules.Count(a => progress != null && progress.Contains(a.Id)); } }
-        int EarnedPoints { get { return rules.Where(a => progress != null && progress.Contains(a.Id)).Sum(a => a.Points); } }
+        int ActiveCount { get { return rules.Count(a => !a.IsPlanned); } }
+        int UnlockedCount { get { return rules.Count(a => !a.IsPlanned && progress != null && progress.Contains(a.Id)); } }
+        int EarnedPoints { get { return rules.Where(a => !a.IsPlanned && progress != null && progress.Contains(a.Id)).Sum(a => a.Points); } }
         void RefreshList()
         {
             Invalidate(); Kick();

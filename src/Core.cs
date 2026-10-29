@@ -13,10 +13,20 @@ namespace WiiUAchievements
     public sealed class GameSnapshot
     {
         public int Rupees, Health, MaxHealth;
+        public int? HeroClothes;
+        readonly Dictionary<string, int> progression = new Dictionary<string, int>();
+        public void SetProgression(string field, int value)
+        {
+            var spec = WindWakerProgression.Find(field);
+            if (spec == null || value < 0 || value > spec.Maximum) throw new ArgumentException("Valore progressione non valido: " + field);
+            progression[field] = value;
+        }
         public DateTime Utc;
         public void Validate()
         {
             new Observation { MaxHealth = MaxHealth, Health = Health, Rupees = Rupees }.Validate();
+            if (HeroClothes.HasValue && HeroClothes != 0 && HeroClothes != 1)
+                throw new ArgumentException("Flag tunica non valido.");
             if (Utc.Kind != DateTimeKind.Utc || Utc == DateTime.MinValue)
                 throw new ArgumentException("Il campione deve avere un timestamp UTC valido.");
         }
@@ -30,24 +40,57 @@ namespace WiiUAchievements
         }
         public int Value(string field)
         {
+            int observed;
+            if (progression.TryGetValue(field, out observed)) return observed;
             switch (field)
             {
                 case "rupees": return Rupees;
                 case "max_health": return MaxHealth;
+                case "hero_clothes":
+                    if (!HeroClothes.HasValue) throw new InvalidDataException("Dato tunica non disponibile.");
+                    return HeroClothes.Value;
                 default: throw new InvalidDataException("Campo sconosciuto: " + field);
             }
         }
+        public bool HasValue(string field)
+        { return field == "hero_clothes" ? HeroClothes.HasValue : field == "rupees" || field == "max_health" || progression.ContainsKey(field); }
+        public bool RegressesFrom(GameSnapshot old)
+        {
+            return old != null && ((HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) ||
+                progression.Any(pair => pair.Key != "grandma_and_soup" && old.HasValue(pair.Key) && pair.Value < old.Value(pair.Key)));
+        }
+        public bool ProgressionDiffersFrom(GameSnapshot old)
+        { return old == null || HeroClothes != old.HeroClothes || progression.Count != old.progression.Count || progression.Any(p => !old.progression.ContainsKey(p.Key) || old.progression[p.Key] != p.Value); }
+        internal GameSnapshot CopyProgression()
+        {
+            var copy = new GameSnapshot { HeroClothes = HeroClothes };
+            foreach (var pair in progression) copy.progression.Add(pair.Key, pair.Value);
+            return copy;
+        }
     }
 
+    public enum AchievementRarity { Bronze, Silver, Gold, Platinum }
     public sealed class Achievement
     {
         public string Id, Title, Description, Field;
+        public string Category = "Crescita", Requirement;
+        public string Chapter = "Extra";
+        public int Order = 10000;
+        public bool Experimental;
+        public AchievementRarity Rarity = AchievementRarity.Bronze;
         public int Threshold, Points;
-        public bool Met(GameSnapshot s) { return s.Value(Field) >= Threshold; }
+        public bool IsPlanned { get { return Requirement != null; } }
+        public bool Met(GameSnapshot s)
+        {
+            if (IsPlanned) throw new InvalidOperationException("Obiettivo in attesa di verifica: " + Id);
+            return s.Value(Field) >= Threshold;
+        }
     }
     public static class AchievementSet
     {
         public const string Revision = "wwhd-alpha-1";
+        public static readonly System.Collections.ObjectModel.ReadOnlyCollection<string> Categories =
+            Array.AsReadOnly(new[] { "Storia", "Equipaggiamento", "Esplorazione", "Collezioni", "Secondarie", "Crescita" });
         public static List<Achievement> Load(string path)
         {
             return Load(path, Revision);
@@ -57,32 +100,97 @@ namespace WiiUAchievements
             var doc = SafeXml.Load(path);
             if (String.IsNullOrWhiteSpace(revision) || doc.Root == null || doc.Root.Name != "achievement-set" || (string)doc.Root.Attribute("revision") != revision)
                 throw new InvalidDataException("Set achievement incompatibile.");
-            if (doc.Root.Elements().Any(x => x.Name != "achievement"))
+            if (doc.Root.Elements().Any(x => x.Name != "achievement" && x.Name != "planned"))
                 throw new InvalidDataException("Elemento sconosciuto nel set achievement.");
             var results = new List<Achievement>();
-            foreach (var x in doc.Root.Elements("achievement"))
+            foreach (var x in doc.Root.Elements())
             {
-                string[] attributes = { "id", "title", "description", "field", "threshold", "points" };
+                bool planned = x.Name == "planned";
+                string[] attributes = planned ? new[] { "id", "title", "description", "category", "requirement", "points", "chapter", "order" } :
+                    new[] { "id", "title", "description", "field", "threshold", "points", "category", "experimental", "chapter", "order" };
                 if (x.HasElements || x.Attributes().Any(attribute => !attributes.Contains(attribute.Name.ToString())))
                     throw new InvalidDataException("Condizione achievement non supportata.");
-                int threshold, points;
-                if (!Int32.TryParse((string)x.Attribute("threshold"), NumberStyles.None, CultureInfo.InvariantCulture, out threshold) ||
+                int threshold = 0, points;
+                if ((!planned && !Int32.TryParse((string)x.Attribute("threshold"), NumberStyles.None, CultureInfo.InvariantCulture, out threshold)) ||
                     !Int32.TryParse((string)x.Attribute("points"), NumberStyles.None, CultureInfo.InvariantCulture, out points))
                     throw new InvalidDataException("Soglia o punteggio achievement non valido.");
                 var a = new Achievement {
                     Id = (string)x.Attribute("id"), Title = (string)x.Attribute("title"),
                     Description = (string)x.Attribute("description"), Field = (string)x.Attribute("field"),
+                    Category = (string)x.Attribute("category") ?? (planned ? null : "Crescita"), Requirement = planned ? (string)x.Attribute("requirement") : null,
                     Threshold = threshold, Points = points };
+                int order;
+                if (x.Attribute("order") != null && (!Int32.TryParse((string)x.Attribute("order"), NumberStyles.None, CultureInfo.InvariantCulture, out order) || order > 10000))
+                    throw new InvalidDataException("Ordine obiettivo non valido.");
+                a.Order = x.Attribute("order") == null ? 10000 : Int32.Parse((string)x.Attribute("order"), CultureInfo.InvariantCulture);
+                a.Chapter = (string)x.Attribute("chapter") ?? (a.Category == "Crescita" ? "15 · Crescita" : "14 · Extra");
+                if (String.IsNullOrWhiteSpace(a.Chapter) || a.Chapter.Length > 48 ||
+                    (x.Attribute("experimental") != null && (string)x.Attribute("experimental") != "true" && (string)x.Attribute("experimental") != "false"))
+                    throw new InvalidDataException("Metadati obiettivo non validi.");
+                a.Experimental = (string)x.Attribute("experimental") == "true";
                 if (String.IsNullOrWhiteSpace(a.Id) || String.IsNullOrWhiteSpace(a.Title) ||
                     String.IsNullOrWhiteSpace(a.Description) || a.Id != a.Id.Trim() || a.Id.Length > 128 ||
-                    results.Any(t => t.Id == a.Id) || (a.Field != "rupees" && a.Field != "max_health") || a.Threshold <= 0 || a.Points <= 0 ||
+                    results.Any(t => t.Id == a.Id) || !Categories.Contains(a.Category) || a.Points <= 0 ||
+                    (planned ? String.IsNullOrWhiteSpace(a.Requirement) :
+                    ((a.Field != "rupees" && a.Field != "max_health" && a.Field != "hero_clothes" && !WindWakerProgression.ValidThreshold(a.Field, a.Threshold)) || a.Threshold <= 0 ||
+                    (WindWakerProgression.Find(a.Field) != null && !a.Experimental) ||
+                    (a.Field == "hero_clothes" && a.Threshold != 1) ||
                     (a.Field == "rupees" && a.Threshold > 5000) ||
-                    (a.Field == "max_health" && (a.Threshold < 12 || a.Threshold > 80 || a.Threshold % 4 != 0)))
+                    (a.Field == "max_health" && (a.Threshold < 12 || a.Threshold > 80 || a.Threshold % 4 != 0)))))
                     throw new InvalidDataException("Definizione achievement non valida.");
                 results.Add(a);
             }
             if (results.Count == 0) throw new InvalidDataException("Il set non contiene obiettivi.");
             return results;
+        }
+    }
+
+    // Editorial metadata never changes conditions, points, IDs or progress identity.
+    public static class AchievementPresentation
+    {
+        public static void Apply(List<Achievement> rules, string path, string revision)
+        {
+            var doc = SafeXml.Load(path);
+            if (doc.Root == null || doc.Root.Name != "achievement-presentation" || (string)doc.Root.Attribute("revision") != revision ||
+                doc.Root.Attributes().Any(a => a.Name != "revision")) throw new InvalidDataException("Presentazione obiettivi incompatibile.");
+            var seen = new HashSet<string>();
+            foreach (var node in doc.Root.Elements())
+            {
+                string[] allowed = { "id", "rarity", "chapter", "order", "title", "description" };
+                string id = (string)node.Attribute("id"), rarity = (string)node.Attribute("rarity");
+                var rule = rules.SingleOrDefault(a => a.Id == id);
+                if (node.Name != "entry" || node.HasElements || node.Attributes().Any(a => !allowed.Contains(a.Name.ToString())) || rule == null || !seen.Add(id))
+                    throw new InvalidDataException("Voce di presentazione sconosciuta o duplicata.");
+                AchievementRarity value;
+                switch (rarity)
+                {
+                    case "bronze": value = AchievementRarity.Bronze; break;
+                    case "silver": value = AchievementRarity.Silver; break;
+                    case "gold": value = AchievementRarity.Gold; break;
+                    case "platinum":
+                        if (id != "completion-platinum" || !rule.IsPlanned) throw new InvalidDataException("Platino riservato al futuro completamento finale del set.");
+                        value = AchievementRarity.Platinum; break;
+                    default: throw new InvalidDataException("Rarità obiettivo non valida.");
+                }
+                rule.Rarity = value;
+                foreach (string attribute in new[] { "chapter", "title", "description" })
+                {
+                    var text = node.Attribute(attribute);
+                    if (text == null) continue;
+                    if (String.IsNullOrWhiteSpace(text.Value) || (attribute == "chapter" && text.Value.Length > 48)) throw new InvalidDataException("Testo di presentazione non valido.");
+                    if (attribute == "chapter") rule.Chapter = text.Value;
+                    else if (attribute == "title") rule.Title = text.Value;
+                    else rule.Description = text.Value;
+                }
+                int order;
+                if (node.Attribute("order") != null)
+                {
+                    if (!Int32.TryParse((string)node.Attribute("order"), NumberStyles.None, CultureInfo.InvariantCulture, out order) || order > 10000)
+                        throw new InvalidDataException("Ordine di presentazione non valido.");
+                    rule.Order = order;
+                }
+            }
+            if (seen.Count != rules.Count) throw new InvalidDataException("Ogni obiettivo deve avere una rarità esplicita.");
         }
     }
 
@@ -185,7 +293,7 @@ namespace WiiUAchievements
         }
     }
 
-    public enum AchievementPhase { WaitingForBaseline, Stabilizing, AlreadySatisfied, Tracking, Confirming, Unlocked }
+    public enum AchievementPhase { WaitingForBaseline, Stabilizing, AlreadySatisfied, Tracking, Confirming, Unlocked, PendingValidation }
     public sealed class AchievementStatus
     {
         public AchievementPhase Phase { get; internal set; }
@@ -203,6 +311,7 @@ namespace WiiUAchievements
         public const int RequiredSamples = 3;
         public int StateVersion { get; private set; }
         DateTime? lastSample;
+        GameSnapshot lastProgression;
         public AchievementEngine(List<Achievement> rules, ProgressStore progress)
         {
             if (rules == null || progress == null) throw new ArgumentNullException(rules == null ? "rules" : "progress");
@@ -225,21 +334,27 @@ namespace WiiUAchievements
         public void Reset()
         {
             lastSample = null;
+            lastProgression = null;
             foreach (var a in achievements)
             {
                 armed[a.Id] = false; streak[a.Id] = 0; below[a.Id] = 0;
-                SetState(a.Id, store.Contains(a.Id) ? AchievementPhase.Unlocked : AchievementPhase.WaitingForBaseline, 0);
+                SetState(a.Id, a.IsPlanned ? AchievementPhase.PendingValidation : store.Contains(a.Id) ? AchievementPhase.Unlocked : AchievementPhase.WaitingForBaseline, 0);
             }
         }
         public List<Achievement> Update(GameSnapshot s)
         {
             try { if (s == null) throw new ArgumentNullException("s"); s.Validate(); }
             catch { Reset(); throw; }
-            if (lastSample.HasValue && (s.Utc <= lastSample.Value || (s.Utc - lastSample.Value).TotalSeconds > 1)) Reset();
+            if (lastSample.HasValue && (s.Utc <= lastSample.Value || (s.Utc - lastSample.Value).TotalSeconds > 1 || s.RegressesFrom(lastProgression))) Reset();
             var awards = new List<Achievement>();
             foreach (var a in achievements)
             {
-                if (store.Contains(a.Id)) continue;
+                if (a.IsPlanned || store.Contains(a.Id)) continue;
+                if (!s.HasValue(a.Field))
+                {
+                    armed[a.Id] = false; streak[a.Id] = 0; below[a.Id] = 0;
+                    SetState(a.Id, AchievementPhase.WaitingForBaseline, 0); continue;
+                }
                 bool met = a.Met(s);
                 if (!met)
                 {
@@ -260,6 +375,7 @@ namespace WiiUAchievements
             catch { Reset(); throw; }
             foreach (var a in awards) SetState(a.Id, AchievementPhase.Unlocked, 0);
             lastSample = s.Utc;
+            lastProgression = s.CopyProgression();
             return awards;
         }
     }

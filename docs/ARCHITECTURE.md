@@ -16,8 +16,10 @@ On connection, `MainForm.Connect`:
    that profile’s reader. Only Wind Waker is currently available.
 4. Opens Cemu for query/read access and detects its 4 GiB guest reservation.
 5. Requires the base from the log to match a discovered reservation.
-6. Calls the profile reader. The current Wind Waker reader reads six bytes at
-   `guestBase + 0x145B7B80` and validates a snapshot.
+6. Calls the profile reader. The current experimental reader reads a `0x724`-byte
+   save-state window at `guestBase + 0x145B7B80`. It parses the original six-byte
+   header, clothing bit and selected progression fields. The buffer is never
+   written to disk. This is not an atomic or full-game snapshot.
 7. Opens the selected profile's progress, establishes an engine baseline, then
    starts a WinForms timer with a nominal interval of 100 ms.
 
@@ -30,6 +32,13 @@ from the log approximately once per second. Failures disconnect the reader and
 reset pending conditions. They do not erase saved unlocks.
 
 ## Types and responsibilities
+
+`AchievementPresentation.Apply` loads the game's optional editorial metadata
+file after rules, checks complete/unique ID coverage and the expected revision,
+and applies rarity, order and optional text corrections. Other attributes are
+rejected, so this layer cannot alter points or executable conditions. The shared
+`AchievementRarity` value drives `Art.Tier` for cards/dialogs/toasts. A missing
+editorial file fails before switching games; no live state is replaced.
 
 `ProcessMemory` owns a native process handle and implements `Read`, `Regions`,
 and `FindGuestBases`. Addresses are unsigned 64-bit host addresses. Guest offsets
@@ -52,13 +61,40 @@ divisible by four, current health between zero and capacity, and 0–5000 rupees
 Those assumptions are part of the current profile; review them before extending
 the game or supporting other titles.
 
+The reader also decodes clothing mask `0x80` into nullable boolean-valued
+`HeroClothes` (0/1). Header-only snapshots and the demo leave it unavailable,
+which is distinct from an observed zero. Missing data clears that rule's transient
+state and cannot arm acquisition. Other flags in the same byte are ignored.
+
+`WindWakerProgression` contains 50 researched decoders for cumulative item flags,
+individual songs, capacities, population counts, specific saved dungeon flags
+and a few named event flags. Unknown encodings are unavailable rather than zero.
+Values are stored in a bounded-name snapshot dictionary; setters reject unknown
+fields and out-of-range values. Only supported definitions can reference them.
+All rules using these new mappings must explicitly set `experimental="true"`.
+They are executable development rules authorized for progressive playtesting,
+not live-certified mappings. See `PLAYTHROUGH.md` and `MEMORY-MAP.md`.
+
 `AchievementSet.Load` requires the revision supplied by the selected game
 (the original overload still requires `wwhd-alpha-1`), unique IDs, nonblank
-text, positive thresholds/points, and the fields `rupees` and `max_health`.
+text, positive thresholds/points, and the fields `rupees`, `max_health` and
+`hero_clothes` (only threshold 1), plus the registered experimental progression
+fields with bounds/attainable capacity thresholds.
 Unreachable thresholds, fractional heart capacities, unknown child elements
 and unsupported condition attributes are rejected. Conditions
 are currently a single `>=` threshold. Adding arbitrary XML fields alone does
 not add an engine capability.
+
+The additive catalog extension supports `<planned>` entries with an ID, category,
+text, proposed points and a validation requirement, but no executable fields.
+These entries are presented as `PendingValidation` and are skipped before any
+condition or persistence evaluation. They cannot earn points, inflate completion
+totals or unlock in demo mode. The main XML contains 16 executable rules; the
+explicitly configured `achievements-story.xml` holds the tunic plus 53 executable
+experiments; `achievements-planned.xml` contains 40 pending targets. All revisions must match
+and IDs must be unique across files. The
+companion may not contain executable rules. See `ACHIEVEMENTS.md`. Category/status selection is purely
+presentation; rendering never alters sampling or persistence.
 
 `AchievementEngine` evaluates snapshots without accessing the process or UI.
 For each locked rule it maintains an armed flag and a consecutive-match count:
@@ -70,6 +106,10 @@ For each locked rule it maintains an armed flag and a consecutive-match count:
 - Three consecutive at/above-threshold samples after arming award it.
 - A timestamp reversal or sampling gap longer than one second resets all
   transient state and treats the next sample as a baseline.
+- A regression in observed permanent progression also resets the baseline.
+  Continuity stores a defensive copy so caller mutation cannot hide a rollback.
+  Rupees, current health and consumable soup contents are excluded from this
+  check. This does not identify every load or replace manual recording boundaries.
 - Already persisted IDs never award again in that profile.
 - Every award due in the same sample commits together via `AwardMany` before
   any award is returned to the UI. A write failure resets transient state and
@@ -87,6 +127,11 @@ Earned progress remains. This is an explicit user-controlled recording boundary,
 not automatic gameplay/menu/load/save-slot detection.
 
 This is polling of persistent state, not event hooks or frame-perfect tracking.
+
+Presentation sorts by optional `order` and combines chapter/category/status
+filters. These metadata do not impose dependencies or feed the engine. The
+sampling layer explicitly refreshes presentation when progression values change,
+including below-threshold counters whose engine phase remains the same.
 
 ## Persistence contract
 

@@ -1,5 +1,226 @@
 # Validation record and reproduction
 
+## GitHub main synchronization checks — 2026-10-29, Windows x64
+
+- Refreshed `origin/main`; local `main` and remote shared the same starting
+  commit before committing the accumulated development changes.
+- Official C# 5/.NET Framework x64 build passed into
+  `build-check/github-sync/`, leaving existing application executables intact.
+- **248 core/Win32 checks passed** and **45 UI checks passed**. UI artifacts
+  remain local in `build-check/github-sync-ui/`; scroll traversal median was
+  **2.13 ms**, p95 **6.93 ms** over 80 frames.
+- The first sandboxed core run stopped on temporary-file access; rerunning with
+  the required filesystem access passed the complete suite.
+- `git diff --check` passed. Only source, rules, tests and project documentation
+  were included; no local progress, settings, build outputs or game files were
+  added. No live Cemu validation or new package validation was performed.
+
+## Editorial rarity and ordering review — 2026-10-29, Windows x64
+
+- All 110 catalog entries have explicit rarity: **53 bronze, 47 silver, 10 gold**;
+  no current platinum. The future set-completion platinum is reserved separately.
+- Rarity no longer derives from points. The editorial file cannot change fields,
+  thresholds, points, IDs or experimental flags. Missing entries, unknown IDs,
+  duplicate IDs, unsupported attributes, unknown rarities and inappropriate
+  platinum assignment fail loading before game selection changes.
+- **248 core/Win32 checks passed**: existing progression/engine/native/persistence
+  regressions plus rarity coverage, equal-point/different-rarity cases, story
+  ordering and malformed editorial metadata. Legacy progress fixture still loads.
+- **45 UI checks passed** including curated medal rendering, chronology, filters,
+  cached live footers/unlock invalidation, demo/pause/resume and minimum size.
+  The scroll pixel test now locates its wallet card after the deliberate numeric
+  ordering change. Traversal median **2.15 ms**, p95 **6.33 ms** over 80 frames.
+- Inspected Windows main preview: readable rarity names below medals; existing
+  layout, art and experimental markers preserved. Detail pills and notifications
+  share the same rarity rather than a separate points-derived classification.
+- Separate build in `build-check/rarity/`; previous live executable left running.
+  Settings/progress copied locally to missing destination files only, never into
+  the shared package. Original points, stable IDs, `wwhd-alpha-1`, all conditions
+  and memory offsets remain unchanged. No new Cemu evidence is claimed.
+
+See `RARITIES.md` for the editorial criteria and corrected ordering/descriptions.
+
+## Implemented playthrough series — 2026-10-28, Windows x64
+
+The user explicitly requested implementation in batches before they verify the
+events during a normal playthrough. This development build implements **53 new
+experimental automatic rules**, for **70 executable objectives / 40 unimplemented
+targets** (110 total). It does not certify the new mappings as live-verified.
+
+- Official C# 5/.NET Framework x64 build succeeds into `build-check/playthrough/`.
+- **241 core/Win32 checks passed**. Every executable addition is checked for no
+  retrospective award on a completed initial state, a stable live crossing,
+  persistence reload and atomic simultaneous awards. Additional decoder tests
+  cover cumulative upgrades, sparse masks/popcounts, song identities, distinct
+  pearls, invalid/unavailable encodings, capacities independent of current
+  inventory, bottle contents, 49 mapped sectors, exact boss stages plus per-quest
+  conjunctions, permanent-state rollback and defensive continuity snapshots.
+- A reconstructed, sequential playthrough passes the actual parser, engine and
+  progress store through clothing, telescope, sword, shield, pirates, first
+  fortress, first dungeon tools, pearls, Tower of the Gods, Master Sword,
+  Helmaroc, Zelda, elemental upgrades, temples, Triforce and light arrows. Each
+  stage checks the exact award IDs and absence of unrelated awards. This is
+  synthetic evidence, not a real completed playthrough.
+- The Win32 child fixture now commits a synthetic two-page save window at the
+  supported guest offset; the production reader reads it through real
+  `ReadProcessMemory`, verifies the host=base+guest translation and decodes
+  header, clothing and inventory. The four previous native scanner checks pass.
+- **44 UI checks passed**: chronological default ordering, active experimental
+  story cards, combined chapter/category/status filters, F chapter navigation,
+  explicit pending versus executable labels, prior demo/pause/settings/profile
+  behavior, bounded cache and no stale live footers. Inspected full-size and
+  900 x 680 Windows previews. Scroll traversal median **2.32 ms**, p95 **6.18 ms**
+  over 80 grid frames including cache fills/eviction, preserving the earlier fix.
+- **Passive real-session baseline only:** exact Cemu 2.6 / EUR v0 / `cdc68acd`,
+  current log and guest reservation matched. Without asking the user to perform
+  actions, the 50 decoder fields were all available: relevant initial item,
+  song, boss and event values zero; wallet capacity 500; three mapped sectors;
+  zero bottles; clothing bit set. No raw state buffer/log was saved. This
+  baseline does not validate acquisition or late-game mappings.
+
+Read-only access, original IDs, `wwhd-alpha-1`, earned timestamps and existing
+progress identity are preserved. Source-derived experiments retain explicit
+labels in cards, details, accessibility, log and notifications. The demo does
+not invent these fields, so absent data cannot arm them. A rollback in persistent
+values resets transient conditions, but **automatic gameplay/load/save-slot
+detection is still incomplete**: manual pause/disconnect before a load remains
+required. Boss flags may persist on leaving/warping out of the boss area.
+
+Live acquisitions for these 53 rules, per-field menu/load/reconnect/restart
+checks, late-game HD layout and a full playthrough remain pending. Earlier real
+rupee/tunic evidence below remains separate. See `PLAYTHROUGH.md` for the groups
+the user can now verify naturally, without repeating an acquisition ritual.
+
+## Combined scrolling/tunic build — 2026-10-28, Windows x64
+
+The catalog now has **17 active objectives** (16 thresholds plus the green tunic)
+and **93 pending targets**, with unchanged IDs and `wwhd-alpha-1` progress identity.
+
+- **80 core/Win32 checks passed**. New checks cover the clothing bit mask,
+  stable acquisition and persistence, no award for an already-received tunic,
+  unknown data not arming the rule, unknown data clearing a pending acquisition,
+  rejection of non-boolean snapshots and impossible boolean thresholds.
+- **41 UI checks passed**, including the scrolling/cache regressions and an
+  active tunic entry in the Story/Da sbloccare filters. Pending entries explicitly
+  say Non attivo and announce that automatic unlocks are unavailable.
+- The full-catalog 80-frame grid traversal in this combined build measured
+  median **2.73 ms**, p95 **7.14 ms** (same 1120 x 800 setup as below; cold entries
+  and cache eviction included). These are synthetic render timings, not a Cemu
+  frame-rate measurement.
+- Real targeted map observations: the user's acquired state read `0x80`; loading
+  the earlier save before delivery read `0`; receiving the tunic again read
+  `0x80`; leaving the house and opening the game menu still read `0x80`.
+  Each observation used a newly opened read-only handle, exact profile matching
+  and a reservation/log cross-check. See `MEMORY-MAP.md` for the derivation and
+  remaining limits. No other story/inventory field was enabled.
+- Built into `build-check/scroll-fix/` without stopping the user's previous app
+  or Cemu. Settings and saved progress were copied locally from the running
+  earlier build's data directory, only to missing destination files. The shared
+  archive excludes this personal data.
+- Packaging rebuilt from source, reran all 80 core/Win32 checks and verified a
+  **53-file manifest**, including the card-cache source and active story XML.
+- **Live end-to-end tunic unlock confirmed by the user.** The user launched the
+  corrected build, loaded the pre-delivery save with recording disconnected,
+  connected before delivery, waited for the baseline and received the tunic.
+  They confirmed the notification **Il colore dell'avventura** appeared. A
+  subsequent read of the local progress XML confirmed exactly one saved
+  `story-heros-clothes` entry. No manual or retrospective award was written.
+
+The tunic reads one extra byte at guest `0x145B81CE`, decoded with mask `0x80`.
+The snapshot represents absent data separately from a real zero, including in
+demo mode. The 16 original/additive thresholds still read the same six-byte
+header. The active story rule lives in `achievements-story.xml`; the original
+threshold file remains readable by the old executable. All three catalog files
+are copied by build/test scripts and validated for revision/ID consistency.
+
+Still pending: real application restart recovery of this specific tunic unlock,
+Cemu restart stability and automatic gameplay/save-slot detection. **Pause or
+disconnect before loading saves and connect/resume before the delivery.** The
+app deliberately does not award a tunic already present on connection.
+
+## Achievement scrolling performance — 2026-10-28, Windows x64
+
+User reported heavy scrolling lag in the expanded build. A same-machine rendering
+probe on the 110-card list (1120 x 800, 96 DPI, .NET Framework x64, no live game
+attachment) measured 80 timed frames after 16 warm-up frames:
+
+- Before: full-frame median 23.70 ms / p95 28.61 ms; grid median 19.14 ms /
+  p95 21.40 ms. Layout alone was 0.06 ms median.
+- After bounded static-card caching: full-frame median 12.27 ms / p95 12.62 ms;
+  warm grid median 1.69 ms / p95 1.80 ms.
+- The committed UI suite also traversed the entire catalog over 80 grid frames,
+  including new cache entries and eviction: median 2.24 ms / p95 5.90 ms.
+  These are rendering times, not measured screen refresh rates or a guarantee
+  about Cemu load, other DPI settings or every PC.
+- **40 UI checks passed**, including eight scrolling/cache regressions: reuse
+  within a row, live progress pixels changing without rebuilding static cards,
+  unlock medal invalidation, bounded cache during long traversal, access to the
+  final target, release of cached entries and intro visibility deep in the list.
+  A further accessibility check confirms that pending story targets explicitly
+  announce the absence of automatic unlocks. Existing catalog, filters,
+  pause/resume, demo, profile, minimum-size and settings checks still pass.
+- Inspected Windows-rendered pending catalog preview: original layout, text,
+  medals and shadows preserved. No engine, memory or progress format changed.
+
+Static card images are limited to 48 entries and cleared on resize, game changes
+and disposal. Scroll-only animation frames no longer repaint the banner/top bar.
+The previous open executable and all personal progress remain untouched. Build
+the fix separately with `build.ps1 -OutputDirectory .\build-check\scroll-fix`.
+
+The user also reported receiving the green tunic again after loading an earlier
+save, with no achievement. This is expected for its current **pending** catalog
+entry: no clothing field or acquisition condition exists in the production
+reader. This report is not evidence that the tunic detector works. A candidate
+event bit was subsequently observed set once; live transition validation and
+safe session/load detection are still required. Pending cards now say **Non
+attivo** explicitly, and their accessibility description states that automatic
+unlocks are unavailable.
+
+## Expanded catalog verification — 2026-10-28, Windows x64
+
+Checked on the original user's Windows PC while the existing application and
+Cemu remained open. The running root EXE was not overwritten or stopped.
+
+- Official C# 5/.NET Framework x64 build succeeded into `build-check/`.
+- **73 core/Win32 checks passed**. Added coverage verifies all original IDs,
+  thresholds and points, 16 executable versus 94 pending entries, strict pending
+  metadata validation, category validation, unique IDs across both entry types,
+  no pending awards even with maximum synthetic values or a pre-existing stored
+  pending ID, and stable crossings/no retrospective awards/persisted reload for
+  each of the six new thresholds. The synthetic native process fixture passed.
+  The runtime threshold XML remains compatible with the older executable;
+  duplicate IDs across companion files and executable companion rules are rejected.
+- **31 UI checks passed**, including the 22 prior checks plus active-only
+  completion totals, pending/category filtering, category keyboard cycling,
+  pending accessibility explanations, detail cards, rendering while sampling and
+  all four tabs fitting at the minimum width. Tests used an isolated directory,
+  synthetic data and muted audio; they did not attach to Cemu.
+- Visually inspected Windows-rendered pending-grid and pending-detail previews at
+  900 x 680. Category controls, orange pending labels, proposal points, explanation
+  text, status tabs and the active-only ring fit. Full-size and live-demo pending
+  previews were also generated. Existing sea artwork, font license and sound
+  sources were preserved.
+- `package.ps1 -DestinationPath .\build-check\WiiUAchievements-expanded.zip`
+  rebuilt, reran all 73 checks and verified a **51-file** manifest. New research
+  source and catalog documentation are explicitly allowlisted. No local user
+  data is included. This package is an expanded alpha, not a certified game set.
+- Manual targeted read-only initial-item probe matched Cemu 2.6 / EUR v0 /
+  `cdc68acd`, its log and its guest reservation. The user reported having received
+  no initial items. Known header: 12/12 quarter hearts, 17 rupees. Telescope,
+  sword and shield candidate bytes each read zero once. This is absence-only
+  baseline evidence, not a verified acquisition detector. See `MEMORY-MAP.md`.
+- The user clarified that the green tunic was already acquired. It is now the
+  first of 26 story targets, before the telescope. No clothing flag was read or
+  validated and no retrospective achievement was granted from this report.
+
+The six new executable thresholds use the unchanged header reader; their real
+game crossings have **not** been tested. All 94 story and extra targets remain
+explicitly pending and cannot unlock. No new production memory offsets, gameplay/
+save-slot detection, live inventory acquisition, menu/load/reconnect/restart
+validation, full playthrough, fullscreen popup or audio evidence is claimed.
+Original progress identity and revision remain `wwhd-alpha-1`; no migration or
+copy of the user's progress was performed.
+
 ## Local checkout verification — 2026-10-28
 
 The current main branch was cloned into a dedicated local development folder on

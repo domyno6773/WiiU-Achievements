@@ -1,6 +1,33 @@
 # Wii U Achievements — alpha 0.3
 
+**Revisione rarità:** bronzo, argento e oro sono assegnati esplicitamente;
+il platino è riservato al futuro trofeo conclusivo. Ordine e descrizioni sono
+stati rivisti senza cambiare punti o progressi. Vedi [criteri di rarità](docs/RARITIES.md).
+
+**Build attuale: Playthrough TEST** — **70 obiettivi eseguibili**, compresi
+**53 nuovi rilevamenti sperimentali**, e 40 ancora non implementati. Ora c'è
+codice di rilevamento per le serie di inventario, perle, melodie, dungeon e
+progressioni successive: l'utente può verificarlo giocando. Il percorso è
+ordinato e filtrabile con **Tappa / F**. Vedi [guida al percorso](docs/PLAYTHROUGH.md).
+La build isolata è `build-check/playthrough/WiiUAchievements.exe`; le note
+storiche sottostanti documentano le versioni precedenti.
+
 Applicazione Windows indipendente, scritta da zero. Primo gioco: **The Legend of Zelda: The Wind Waker HD**, edizione EUR v0, su **Cemu 2.6**.
+
+**Espansione del catalogo:** 110 obiettivi, divisi in **17 attivi** (16 soglie e
+la tunica verde) e **93 traguardi di storia ed extra da verificare**. Copertura: storia completa,
+equipaggiamento, esplorazione del mare, collezioni e missioni secondarie.
+I traguardi da verificare sono consultabili, ma non si sbloccano ancora e non
+contano nel completamento o nei punti. Le acquisizioni e i flag devono essere
+confermati sul gioco EUR. Vedi [docs/ACHIEVEMENTS.md](docs/ACHIEVEMENTS.md).
+Gli ID originali e la revisione dei progressi sono conservati.
+
+La build corretta in `build-check/scroll-fix/` usa una cache limitata delle
+schede per rendere fluido lo scorrimento. **La tunica verde ora è attiva**:
+carica il salvataggio precedente con l'app scollegata, collega Cemu e attendi
+un secondo prima di parlare con la nonna. Una tunica già posseduta al collegamento
+non viene assegnata retroattivamente. Prima di ogni caricamento usa Pausa o
+Scollega. Gli altri 93 traguardi non attivi rimangono esplicitamente distinti.
 
 ## Repository e copia locale
 
@@ -22,7 +49,8 @@ con `package.ps1`. Conserva il font e la relativa licenza presenti nella repo.
 **Novità dell’alpha 0.3:** sezione **Giochi** predisposta per nuovi titoli,
 con avviso esplicito per quelli non disponibili; comando **Pausa / Riprendi**;
 verifica più robusta delle soglie e salvataggio atomico degli sblocchi simultanei.
-Gli obiettivi restano gli stessi dieci e i progressi esistenti mantengono la loro identità.
+All'uscita dell'alpha 0.3 gli obiettivi erano dieci; l'espansione descritta sopra
+conserva la stessa identità dei progressi.
 Grafica, banner, medaglie e suoni dell’alpha 0.2 sono conservati.
 
 Apri **Giochi** dalla barra superiore (oppure premi **G**). Per ora è disponibile
@@ -73,9 +101,9 @@ Non servono Python, AutoHotkey, EmuHook, un account o una connessione Internet. 
 - Identificazione di Cemu e del gioco tramite log della sessione, versione, Title ID e hash RPX.
 - Individuazione automatica della base di memoria Wii U, anche quando cambia tra gli avvii.
 - Lettura in tempo reale di rupie, vita attuale e capacità dei cuori.
-- Dieci obiettivi iniziali definiti nel file XML, su rupie e capacità di vita.
+- Diciassette obiettivi attivi: rupie, capacità di vita e tunica verde, più 93 traguardi preparati e indicati come «Non attivo» nella sezione «Da verificare».
 - Notifica di sblocco animata in alto al centro, sullo schermo dove si trova Cemu. Non prende il focus del gioco e lascia passare i clic. Il jingle si può disattivare.
-- Interfaccia in stile Wii U. Filtri: tutti, sbloccati, da sbloccare. Facendo clic su un obiettivo si apre la scheda di dettaglio. Il registro attività si apre dall'icona a elenco.
+- Interfaccia in stile Wii U. Filtri: tutti, sbloccati, da sbloccare e da verificare. **Categoria** (tasto **C**) scorre storia, equipaggiamento, esplorazione, collezioni, secondarie e crescita. Ogni scheda apre i dettagli; quelle da verificare spiegano cosa manca per l'attivazione. Il registro attività si apre dall'icona a elenco.
 - Punti locali e progressi salvati tra le sessioni.
 - Demo con dati e progressi separati da quelli reali.
 

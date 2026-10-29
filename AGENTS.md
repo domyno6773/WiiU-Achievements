@@ -6,7 +6,7 @@ These instructions apply to this entire project. Read `HANDOFF.md` first, then
 - User goal: an independent achievement system for Wii U games emulated on PC.
 - Build the implementation from scratch. Do not introduce EmuHook as a dependency.
 - First target is Cemu 2.6, Wind Waker HD EUR v0, RPX `cdc68acd`.
-- This is an early alpha with 10 threshold achievements, not a complete game set.
+- This development build has 70 executable objectives (including 53 explicitly experimental detectors requested for progressive playtesting) and 40 unimplemented targets. Only the recorded live findings are verified; see `docs/PLAYTHROUGH.md` and `docs/VALIDATION.md`.
 - Production process access is read-only. Preserve that design while extending it.
 - Do not include game files, console keys, real memory dumps, personal logs,
   `data/`, or other user state in shared archives or source control.
