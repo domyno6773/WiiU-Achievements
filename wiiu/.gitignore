@@ -1,0 +1,12 @@
+# Wii U native build outputs
+app/build/
+plugin/build/
+app/*.elf
+app/*.rpx
+app/*.wuhb
+plugin/*.elf
+plugin/*.wps
+plugin/*.map
+*.o
+*.d
+.DS_Store
