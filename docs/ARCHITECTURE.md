@@ -1,3 +1,16 @@
+
+## Cloud sync (skeleton, 2026-10-29)
+
+**UI:** Settings sheet now contains an ACCOUNT CLOUD section (email, password, Registrati, Accedi, Esci) drawn with the existing custom widgets. Status text shows signed-in email or "Non connesso".
+
+
+`CloudSync` (`src/CloudSync.cs`) provides optional Firebase Authentication and Firestore REST access.
+- Local `ProgressStore` is still the source of truth while offline.
+- Configuration (API key, project id, refresh token) is stored in `data/cloud.xml` (never committed).
+- `Push` is called after a successful local award when the user is signed in.
+- Network errors are swallowed so gameplay is never blocked.
+- Full document merge (pull of existing unlocks) is intentionally left as the next incremental step.
+
 # Architecture and extension guide
 
 ## Runtime flow
@@ -132,6 +145,19 @@ Presentation sorts by optional `order` and combines chapter/category/status
 filters. These metadata do not impose dependencies or feed the engine. The
 sampling layer explicitly refreshes presentation when progression values change,
 including below-threshold counters whose engine phase remains the same.
+
+
+## Automatic load detection (added 2026-10-29)
+
+In `MainForm.Tick`, after a live sample is read, `sample.PermanentRegressionCount(current)` is evaluated.  
+This method (added to `GameSnapshot`) counts how many permanent progression fields dropped relative to the previous sample (HeroClothes + all `WindWakerProgression` fields except `grandma_and_soup`).
+
+When the count is ≥ 3, the engine is reset (`engine.Reset()`) and a log entry is written.  
+This path reuses the same reset already used by manual Pause and by single-field `RegressesFrom`.  
+Already persisted unlocks are never cleared.  
+Manual Pause remains available for edge cases (very similar saves, menu transitions that do not drop enough permanent flags, etc.).
+
+The detection is intentionally conservative and uses only already-decoded fields; no new memory offsets were introduced.
 
 ## Persistence contract
 

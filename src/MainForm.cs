@@ -16,7 +16,7 @@ namespace WiiUAchievements
         enum StatusKind { Idle, Busy, Live, Demo, Paused, Error }
         sealed class PendingToast { public Achievement Achievement; public string Header; public bool Retry; }
 
-        readonly TextBox cemuPath = new TextBox(), player = new TextBox();
+        readonly TextBox cemuPath = new TextBox(), player = new TextBox(), cloudEmail = new TextBox(), cloudPassword = new TextBox();
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         readonly Queue<PendingToast> toasts = new Queue<PendingToast>();
         readonly List<string> logLines = new List<string>();
@@ -30,6 +30,7 @@ namespace WiiUAchievements
         GameSession session;
         ProgressStore progress;
         AchievementEngine engine;
+        CloudSync cloud;
         GameSnapshot current;
         ulong guestBase;
         DateTime identityCheck;
@@ -44,6 +45,7 @@ namespace WiiUAchievements
         {
             root = AppDomain.CurrentDomain.BaseDirectory;
             dataRoot = Path.Combine(root, "data");
+            cloud = new CloudSync(dataRoot);
             rules = selectedGame.LoadRules(root);
             foreach (var a in rules) arts[a.Id] = Art.For(a, rules);
             Text = "Wii U Achievements — " + selectedGame.Title;
@@ -107,7 +109,7 @@ namespace WiiUAchievements
             player.ReadOnly = value; cemuPath.ReadOnly = value;
             PlaceFields(); Invalidate(); Kick();
         }
-        const string DefaultHint = "Prima di caricare un altro salvataggio, metti in pausa o scollega la registrazione.";
+        const string DefaultHint = "Il caricamento di un salvataggio viene rilevato automaticamente quando possibile. In caso di dubbio usa ancora Pausa.";
         bool FieldsEditable { get { return memory == null && !demo && !connecting; } }
         bool CanConnect { get { return !connecting && memory == null && !demo; } }
         bool CanDisconnect { get { return memory != null || demo; } }
@@ -252,10 +254,18 @@ namespace WiiUAchievements
                         identityCheck = DateTime.UtcNow;
                     }
                     sample = gameReader.Read(memory, guestBase);
+                    // Automatic load/save detection: multi-field permanent regression
+                    // that cannot occur in normal continuous play.
+                    if (current != null && sample.PermanentRegressionCount(current) >= 3)
+                    {
+                        Log("Caricamento rilevato automaticamente: baseline azzerata.");
+                        engine.Reset();
+                    }
                 }
                 foreach (var a in engine.Update(sample))
                 {
                     Log((demo ? "[DEMO] " : a.Experimental ? "[TEST] " : "") + "Sbloccato: " + a.Title + " (+" + a.Points + ")");
+                    if (!demo && cloud != null && cloud.IsSignedIn) cloud.Push(new[] { a.Id }, DateTime.UtcNow, session != null ? session.Fingerprint + "|" + selectedGame.SetRevision : "unknown");
                     toasts.Enqueue(new PendingToast { Achievement = a, Header = demo ? "DEMO · OBIETTIVO SBLOCCATO" : a.Experimental ? "SBLOCCATO · SPERIMENTALE" : "OBIETTIVO SBLOCCATO" });
                     Celebrate(a); RefreshList();
                 }
@@ -315,6 +325,48 @@ namespace WiiUAchievements
         void RefreshList()
         {
             Invalidate(); Kick();
+        }
+    }
+
+        void CloudLogin()
+        {
+            if (cloud == null) return;
+            try
+            {
+                string email = cloudEmail.Text.Trim();
+                string pass = cloudPassword.Text;
+                if (String.IsNullOrWhiteSpace(email) || String.IsNullOrWhiteSpace(pass))
+                { Log("Inserisci email e password."); return; }
+                cloud.SignIn(email, pass);
+                Log("Accesso cloud effettuato: " + email);
+                cloudPassword.Text = "";
+                Invalidate();
+            }
+            catch (Exception ex) { Log("Accesso cloud non riuscito: " + ex.Message); }
+        }
+
+        void CloudSignUp()
+        {
+            if (cloud == null) return;
+            try
+            {
+                string email = cloudEmail.Text.Trim();
+                string pass = cloudPassword.Text;
+                if (String.IsNullOrWhiteSpace(email) || String.IsNullOrWhiteSpace(pass))
+                { Log("Inserisci email e password per registrarti."); return; }
+                cloud.SignUp(email, pass);
+                Log("Account cloud creato e accesso effettuato: " + email);
+                cloudPassword.Text = "";
+                Invalidate();
+            }
+            catch (Exception ex) { Log("Registrazione cloud non riuscita: " + ex.Message); }
+        }
+        void CloudLogout()
+        {
+            if (cloud == null) return;
+            cloud.SignOut();
+            Log("Uscita dall'account cloud.");
+            Invalidate();
         }
     }
 }

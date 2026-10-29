@@ -59,6 +59,21 @@ namespace WiiUAchievements
             return old != null && ((HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) ||
                 progression.Any(pair => pair.Key != "grandma_and_soup" && old.HasValue(pair.Key) && pair.Value < old.Value(pair.Key)));
         }
+
+        // Stronger signal used only for automatic load detection.
+        // Counts permanent progression fields that dropped (excluding consumables).
+        public int PermanentRegressionCount(GameSnapshot old)
+        {
+            if (old == null) return 0;
+            int count = 0;
+            if (HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) count++;
+            foreach (var pair in progression)
+            {
+                if (pair.Key == "grandma_and_soup") continue;
+                if (old.HasValue(pair.Key) && pair.Value < old.Value(pair.Key)) count++;
+            }
+            return count;
+        }
         public bool ProgressionDiffersFrom(GameSnapshot old)
         { return old == null || HeroClothes != old.HeroClothes || progression.Count != old.progression.Count || progression.Any(p => !old.progression.ContainsKey(p.Key) || old.progression[p.Key] != p.Value); }
         internal GameSnapshot CopyProgression()

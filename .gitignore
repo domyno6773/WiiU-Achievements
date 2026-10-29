@@ -6,3 +6,6 @@ test-results/
 build-check/
 WiiUAchievements.exe
 package-manifest.json
+
+# Firebase cloud credentials (never commit)
+data/cloud.xml

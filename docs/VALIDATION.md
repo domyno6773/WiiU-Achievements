@@ -1,4 +1,12 @@
-# Validation record and reproduction
+# Validation
+
+**2026-10-29 — Automatic load detection added**  
+`GameSnapshot.PermanentRegressionCount` + check in `MainForm.Tick`.  
+≥ 3 permanent field drops → automatic `engine.Reset()` + log.  
+Does not clear already-unlocked achievements. Manual Pause still available.  
+No new memory offsets. Synthetic coverage of the count method can be added later.
+
+ record and reproduction
 
 ## GitHub main synchronization checks — 2026-10-29, Windows x64
 

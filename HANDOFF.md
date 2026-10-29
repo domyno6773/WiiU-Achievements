@@ -1,3 +1,5 @@
+
+**UI account cloud (con Registrati) (2026-10-29):** nelle Impostazioni è stata aggiunta la sezione ACCOUNT CLOUD con campi Email/Password e pulsanti Accedi/Esci, nello stesso stile grafico custom-drawn. I metodi `CloudLogin` / `CloudLogout` in `MainForm.cs` chiamano `CloudSync`. Lo stato (connesso / non connesso) è mostrato sotto i pulsanti.
 # Start here — handoff for another AI or developer
 
 This folder is the complete source project. No previous chat, account, cloud
@@ -12,6 +14,9 @@ platinum. Rarity is independent of points; platinum is reserved for a future
 set-completion objective. Text/order corrections are presentation-only. See
 `docs/RARITIES.md`. New isolated build: `build-check/rarity/`. IDs, points,
 conditions, experimental flags and progress identity remain unchanged.
+
+
+**Automatic load detection (2026-10-29):** multi-field permanent progression regression is now detected in `MainForm.Tick`. When at least 3 permanent fields (HeroClothes + WindWakerProgression fields, excluding grandma_and_soup) drop between samples, the engine is reset automatically and a log line is written. This is an extension of the existing `RegressesFrom` safety; already-unlocked achievements are never removed. Manual Pause remains available as a fallback. See `src/Core.cs` (`PermanentRegressionCount`) and `src/MainForm.cs`.
 
 **Current development build — playthrough series (2026-10-28):** at the user's
 explicit request to implement batches before they playtest them, there are now
@@ -97,6 +102,8 @@ the limits of what has been tested.
 Open this folder in your editor. On Windows, run these commands from its root:
 
 ```powershell
+
+**Cloud sync skeleton (2026-10-29):** optional Firebase Auth + Firestore layer in `src/CloudSync.cs`. Local `ProgressStore` remains authoritative offline. Credentials live in `data/cloud.xml` (gitignored). Sign-in, pull and push entry points exist; full merge of unlock documents is the next concrete step once a Firebase project is configured. No network failure can interrupt local play.
 # Existing binary: normal UI, explicit connection button
 .\WiiUAchievements.exe
 
