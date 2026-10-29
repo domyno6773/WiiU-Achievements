@@ -47,6 +47,12 @@ class CoreTests
             save[0x51] = 5; save[0xB4] = 1; save[0x64E] = 0x80;
             for (int i = 0x4A; i <= 0x4D; i++) save[i] = 255;
             Marshal.Copy(save, 0, new IntPtr(block.ToInt64() + WindWakerProgression.SaveAddress), save.Length);
+            IntPtr contextPage = new IntPtr(block.ToInt64() + 0x10474000);
+            if (VirtualAlloc(contextPage, (UIntPtr)0x1000U, 0x1000, 4) == IntPtr.Zero) return 5;
+            byte[] scene = new byte[26]; scene[0] = scene[12] = (byte)'s'; scene[1] = scene[13] = (byte)'e'; scene[2] = scene[14] = (byte)'a';
+            Marshal.Copy(scene, 0, new IntPtr(block.ToInt64() + GameplayContext.StageAddress), scene.Length);
+            byte[] players = new byte[16]; players[0] = players[8] = 0x20; players[2] = players[10] = 0x10;
+            Marshal.Copy(players, 0, new IntPtr(block.ToInt64() + GameplayContext.PlayerAddress), players.Length);
             File.WriteAllText(file, block.ToInt64().ToString());
             Console.ReadLine();
             // Only the boundary candidate changes. This emulates a live value and its stale copy.
@@ -99,6 +105,8 @@ class CoreTests
 
             SystemTests.Run(Check, temporary, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "achievements.xml"));
             ProgressionTests.Run(Check, temporary);
+            GameplayTests.Run(Check, temporary);
+            CloudTests.Run(Check, temporary, portable);
             if (!portable)
             {
             // Real Win32 integration: a separate process with a synthetic Cemu-style mapping.

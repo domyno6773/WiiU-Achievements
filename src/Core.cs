@@ -13,6 +13,7 @@ namespace WiiUAchievements
     public sealed class GameSnapshot
     {
         public int Rupees, Health, MaxHealth;
+        public GameplayContext Context;
         public int? HeroClothes;
         readonly Dictionary<string, int> progression = new Dictionary<string, int>();
         public void SetProgression(string field, int value)
@@ -56,7 +57,7 @@ namespace WiiUAchievements
         { return field == "hero_clothes" ? HeroClothes.HasValue : field == "rupees" || field == "max_health" || progression.ContainsKey(field); }
         public bool RegressesFrom(GameSnapshot old)
         {
-            return old != null && ((HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) ||
+            return old != null && (MaxHealth < old.MaxHealth || (HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) ||
                 progression.Any(pair => pair.Key != "grandma_and_soup" && old.HasValue(pair.Key) && pair.Value < old.Value(pair.Key)));
         }
 
@@ -65,7 +66,7 @@ namespace WiiUAchievements
         public int PermanentRegressionCount(GameSnapshot old)
         {
             if (old == null) return 0;
-            int count = 0;
+            int count = MaxHealth < old.MaxHealth ? 1 : 0;
             if (HeroClothes.HasValue && old.HeroClothes.HasValue && HeroClothes < old.HeroClothes) count++;
             foreach (var pair in progression)
             {
@@ -78,7 +79,7 @@ namespace WiiUAchievements
         { return old == null || HeroClothes != old.HeroClothes || progression.Count != old.progression.Count || progression.Any(p => !old.progression.ContainsKey(p.Key) || old.progression[p.Key] != p.Value); }
         internal GameSnapshot CopyProgression()
         {
-            var copy = new GameSnapshot { HeroClothes = HeroClothes };
+            var copy = new GameSnapshot { HeroClothes = HeroClothes, MaxHealth = MaxHealth };
             foreach (var pair in progression) copy.progression.Add(pair.Key, pair.Value);
             return copy;
         }
@@ -283,6 +284,25 @@ namespace WiiUAchievements
             foreach (var item in temp) unlocked.Add(item.Key, item.Value);
         }
         public bool Contains(string id) { return unlocked.ContainsKey(id); }
+        public string Identity { get { return identity; } }
+        public Unlock[] Snapshot() { return unlocked.Values.Select(x => new Unlock { Id = x.Id, Utc = x.Utc }).ToArray(); }
+        public bool Merge(IEnumerable<Unlock> incoming, IEnumerable<string> allowedIds)
+        {
+            var allowed = new HashSet<string>(allowedIds, StringComparer.Ordinal);
+            var additions = new Dictionary<string, Unlock>();
+            foreach (var item in incoming)
+            {
+                if (item == null || !allowed.Contains(item.Id) || item.Utc.Kind != DateTimeKind.Utc || item.Utc == DateTime.MinValue || item.Utc > DateTime.UtcNow.AddMinutes(5))
+                    throw new InvalidDataException("Sblocco cloud non valido.");
+                if (!Contains(item.Id) && !additions.ContainsKey(item.Id)) additions.Add(item.Id, new Unlock { Id = item.Id, Utc = item.Utc });
+            }
+            if (additions.Count == 0) return false;
+            var entries = unlocked.Values.Concat(additions.Values).OrderBy(x => x.Utc).ThenBy(x => x.Id, StringComparer.Ordinal);
+            SafeXml.AtomicSave(new XDocument(new XElement("progress", new XAttribute("identity", identity),
+                entries.Select(x => new XElement("unlock", new XAttribute("id", x.Id), new XAttribute("utc", x.Utc.ToString("o", CultureInfo.InvariantCulture)))))), path);
+            foreach (var item in additions) unlocked.Add(item.Key, item.Value);
+            return true;
+        }
         public Unlock Get(string id)
         {
             Unlock value;
@@ -327,6 +347,9 @@ namespace WiiUAchievements
         public int StateVersion { get; private set; }
         DateTime? lastSample;
         GameSnapshot lastProgression;
+        readonly GameplayGate gameplay = new GameplayGate();
+        public bool WaitingForGameplay { get { return gameplay.Waiting; } }
+        public string GameplayMessage { get { return gameplay.Message; } }
         public AchievementEngine(List<Achievement> rules, ProgressStore progress)
         {
             if (rules == null || progress == null) throw new ArgumentNullException(rules == null ? "rules" : "progress");
@@ -346,7 +369,8 @@ namespace WiiUAchievements
             var state = states[id];
             return new AchievementStatus { Phase = state.Phase, Confirmations = state.Confirmations };
         }
-        public void Reset()
+        public void Reset() { gameplay.Reset(); ResetConditions(); }
+        void ResetConditions()
         {
             lastSample = null;
             lastProgression = null;
@@ -358,7 +382,27 @@ namespace WiiUAchievements
         }
         public List<Achievement> Update(GameSnapshot s)
         {
-            try { if (s == null) throw new ArgumentNullException("s"); s.Validate(); }
+            try
+            {
+                if (s == null) throw new ArgumentNullException("s");
+                if (s.Utc.Kind != DateTimeKind.Utc || s.Utc == DateTime.MinValue) throw new ArgumentException("Timestamp non valido.");
+                if (!gameplay.Accept(s))
+                {
+                    if (gameplay.PreserveArming)
+                    {
+                        lastSample = null;
+                        foreach (var a in achievements)
+                        {
+                            streak[a.Id] = below[a.Id] = 0;
+                            if (!a.IsPlanned && !store.Contains(a.Id)) SetState(a.Id, AchievementPhase.WaitingForBaseline, 0);
+                        }
+                    }
+                    else ResetConditions();
+                    return new List<Achievement>();
+                }
+                if (gameplay.ResumingTransition && s.RegressesFrom(lastProgression)) ResetConditions();
+                s.Validate();
+            }
             catch { Reset(); throw; }
             if (lastSample.HasValue && (s.Utc <= lastSample.Value || (s.Utc - lastSample.Value).TotalSeconds > 1 || s.RegressesFrom(lastProgression))) Reset();
             var awards = new List<Achievement>();

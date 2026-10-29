@@ -1,11 +1,16 @@
-
-**UI account cloud (con Registrati) (2026-10-29):** nelle Impostazioni è stata aggiunta la sezione ACCOUNT CLOUD con campi Email/Password e pulsanti Accedi/Esci, nello stesso stile grafico custom-drawn. I metodi `CloudLogin` / `CloudLogout` in `MainForm.cs` chiamano `CloudSync`. Lo stato (connesso / non connesso) è mostrato sotto i pulsanti.
-
-**Sync cloud Firebase (2026-10-29):** scheletro in `src/CloudSync.cs` (Auth REST + Firestore). Il `ProgressStore` locale resta la fonte di verità offline. Configurazione in `data/cloud.xml`. Prossimo passo: merge reale dei documenti unlock e UI di login.
 # Prossimo ciclo di sviluppo
 
+Le correzioni del 30 ottobre 2026 ripristinano build e pacchetto, proteggono le
+credenziali e completano il client cloud opzionale. Vedi `docs/CLOUD.md`.
+Il progetto Firebase è stato trovato e verificato: provider email/password
+abilitato, Firestore Native Standard presente, ma regole attuali deny-all.
+Nessun permesso backend è stato modificato. I dati pubblici del progetto sono
+precompilati nell'app. Vedi `docs/CLOUD.md`.
+Caricamenti e ricollegamenti automatici sono implementati e provati sui flussi
+descritti in `docs/AUTOMATIC-LOADS.md`. Prossime prove live: morte/continua,
+due slot diversi, nuova partita/eroe e progressioni sperimentali tardive.
 
-**Rilevamento automatico di load (2026-10-29):** in `MainForm.Tick` viene contata la regressione multi-campo permanente (`GameSnapshot.PermanentRegressionCount`). Con ≥ 3 campi che scendono contemporaneamente il motore viene resettato automaticamente e viene scritto un log. Gli sblocchi già salvati restano. La Pausa manuale resta disponibile. Dettaglio: `src/Core.cs` e `src/MainForm.cs`.
+
 
 La revisione del 2026-10-29 aggiunge rarità esplicite e correzioni di ordine/testo.
 Usare `build-check/rarity/`; la memoria e le condizioni restano quelle della

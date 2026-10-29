@@ -18,7 +18,23 @@ namespace WiiUAchievements
         public static int HeroClothesFromFlags(byte flags) { return (flags & 0x80) != 0 ? 1 : 0; }
         public GameSnapshot Read(ProcessMemory memory, ulong guestBase)
         {
-            return WindWakerProgression.Parse(memory.Read(checked(guestBase + WindWakerProgression.SaveAddress), WindWakerProgression.ReadSize));
+            // Observe context on both sides of the save read: a scene change cannot
+            // combine the old context with the newly loaded save (or vice versa).
+            try
+            {
+                byte[] beforeStage = memory.Read(checked(guestBase + GameplayContext.StageAddress), 26);
+                byte[] beforePlayers = memory.Read(checked(guestBase + GameplayContext.PlayerAddress), 16);
+                var context = GameplayContext.Parse(beforeStage, beforePlayers);
+                if (context.State != GameplayState.Ready) return new GameSnapshot { Utc = DateTime.UtcNow, Context = context };
+                byte[] save = memory.Read(checked(guestBase + WindWakerProgression.SaveAddress), WindWakerProgression.ReadSize);
+                byte[] afterStage = memory.Read(checked(guestBase + GameplayContext.StageAddress), 26);
+                byte[] afterPlayers = memory.Read(checked(guestBase + GameplayContext.PlayerAddress), 16);
+                if (!beforeStage.SequenceEqual(afterStage) || !beforePlayers.SequenceEqual(afterPlayers))
+                    return new GameSnapshot { Utc = DateTime.UtcNow, Context = new GameplayContext(GameplayState.Loading, null, 0) };
+                var sample = WindWakerProgression.Parse(save); sample.Context = context; return sample;
+            }
+            catch (System.ComponentModel.Win32Exception) { return new GameSnapshot { Utc = DateTime.UtcNow, Context = new GameplayContext(GameplayState.Unknown, null, 0) }; }
+            catch (ArgumentException) { return new GameSnapshot { Utc = DateTime.UtcNow, Context = new GameplayContext(GameplayState.Unknown, null, 0) }; }
         }
     }
 

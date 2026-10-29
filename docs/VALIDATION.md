@@ -1,12 +1,122 @@
-# Validation
+# Validation record and reproduction
 
-**2026-10-29 — Automatic load detection added**  
-`GameSnapshot.PermanentRegressionCount` + check in `MainForm.Tick`.  
-≥ 3 permanent field drops → automatic `engine.Reset()` + log.  
-Does not clear already-unlocked achievements. Manual Pause still available.  
-No new memory offsets. Synthetic coverage of the count method can be added later.
 
- record and reproduction
+## Automatic load boundaries and Firebase account inspection — 2026-10-30
+
+Current supported-profile recording no longer requires manual pause/disconnect
+for the observed loading flows. `Gameplay.cs` adds stage/next-stage/player
+context and a 750 ms stability gate; the production reader observes context
+before and after save bytes. Title/file-select, unknown memory and uncertain
+actor replacement clear transient conditions. Observed normal in-world scene
+requests preserve arming but discard confirmation streaks; permanent regression
+still resets. A watcher reopens only the same exact supported Cemu executable,
+profile and validated guest reservation after loss. Explicit disconnect cancels
+pending reconnect/attach continuations. No guest address is used as a host address.
+
+Live read-only evidence on Cemu 2.6 / EUR v0 / cdc68acd:
+- File selection `Name`, transition request 0→1→0, `sea`, absent→matching Link
+  references; repeated after a game restart and read-only handle reopen.
+- New production reader/engine: automatic Menu→Loading→stabilizing→Ready with
+  15-rupee loaded state and zero retrospective awards in an isolated test store.
+- User opened/closed inventory and entered a house; `sea`→Loading→`Omasao` and
+  automatic recording resumed with zero retrospective awards.
+- Complete MainForm, offscreen/muted/isolated profile: unavailable session→auto
+  reconnect→title/file-select→loaded `sea`; no intervention in the achievement
+  app and zero retrospective awards. The title's `sea_T` background contains a
+  player-like actor: it was explicitly excluded after this observation, with a
+  decoder regression based on the observed stage. The final title exclusion was
+  not separately repeated live. Final preservation of in-area arming and attach
+  cancellation were checked synthetically, not by an actual boss acquisition.
+
+**298 core/cloud/Win32 checks passed**, including 26 new gameplay-boundary checks:
+load-forward without permanent drops, menu headers, title actors, stabilization,
+invalid names/pointers, area continuity, unknown/gap resets, no retrospective
+awards and a legitimate crossing after resume. The native child fixture now
+provides separate context pages and verifies the production reader through real
+ReadProcessMemory. **56 UI checks passed** in the final automatic-load run, including automatic
+waiting, reconnect controls and explicit cancellation of a pending attach.
+Scroll median 2.43 ms / p95 6.43 ms over 80 frames. Packaging verifies a 66-file
+manifest and recompiles only the staged sources; the final archive is also
+extracted and rebuilt independently before delivery.
+
+Firebase read-only inspection found existing project `wiiu-achievements` and its
+web app. Authentication email/password is enabled. `(default)` is Standard,
+FIRESTORE_NATIVE, nam5, free tier. Deployed Firestore rules deny all reads/writes;
+no backend rules, accounts or billing were changed, and no actual unlock transfer
+was performed. Public client configuration is prefilled in `CloudProject.cs`.
+Private tokens, settings, progress and CLI logs stay out of Git and packages.
+
+See [AUTOMATIC-LOADS.md](AUTOMATIC-LOADS.md) for exact fields/evidence/remaining
+cases, and [CLOUD.md](CLOUD.md) for current backend requirements. New-game/hero,
+two different slots, death/continue, late-game transitions and a full playthrough
+remain untested live. Polling is not frame-perfect; experimental achievement
+mappings have not been promoted by this work. Older manual-only notes below are
+historical and do not describe this build.
+
+
+## Corrections after the Grok commit audit — 2026-10-30, Windows x64
+
+Application builds with the official .NET Framework compiler, C# 5/x64. Changes:
+- Fixed the premature `MainForm` class closure; removed the redundant multi-field
+  reset and restored mandatory manual pause guidance. The engine also detects
+  maximum-heart rollback; full gameplay/load/save-slot detection remains pending.
+- Account settings use a separate page that fits 900 x 680. Cloud fields are
+  editable during recording, password fallback drawing is masked, and leaving
+  the page or starting auth clears the password.
+- Auth and synchronization run in serialized background tasks, never synchronously
+  inside the sampling loop. The UI stays responsive during a pending test request.
+- Real per-ID UTC unlock documents, paginated pull, immutable remote creates,
+  local atomic validated import, profile/game/revision isolation, and durable
+  retries from local progress replace the previous timestamp-only skeleton.
+- Framework JSON parser/serializer, token expiry/refresh/restart, DPAPI-protected
+  credentials and legacy-backup removal are implemented. Local progress format,
+  IDs, set revision, points, memory reader and offsets remain unchanged.
+- Package allowlist includes cloud source/tests/setup documentation; packaging
+  now recompiles only its staged sources to catch omissions.
+
+**272 core/cloud/Win32 checks passed**, including 24 new checks for import atomicity,
+unknown IDs, timestamps/reload, defensive snapshots, profile identity, heart
+regression, formatted JSON/escaping, encrypted storage, renewal/restart,
+offline retry, logout/project switches, migration and pagination. Native Win32
+fixture uses only synthetic child memory. Cloud tests use an injected fake REST
+transport, not an external account. DPAPI checks are explicitly Windows-only.
+**53 UI checks passed** in the final isolated run, including 8 new cloud
+regressions. A repeated visible-window run failed its pause-click assertion;
+the test now positions its window offscreen to isolate native desktop input,
+while retaining synthetic mouse/keyboard dispatch and actual rendering. Final
+pause/resume checks pass. Scroll median 2.46 ms / p95 6.22 ms over 80 frames.
+Minimum-size account preview visually inspected on Windows.
+The earlier diagnostic report describes the original commit, not these fixes.
+
+Package creation passed the 62-file manifest and independent staged-source
+rebuild. Existing EXEs and personal progress were not replaced or copied into the
+new output. No real Firebase project, security rules deployment, multi-device
+cloud transfer or Cemu live session was tested. Configure and validate the backend
+as described in [CLOUD.md](CLOUD.md); these synthetic results do not certify it.
+
+## Independent audit of commit 8b292ef — 2026-10-29, Windows x64
+
+Local `main` was fast-forwarded from `4329afa` to remote `8b292ef`. The received
+application **does not compile**: `MainForm.cs` has account methods outside its
+class (`CS0116`/`CS1022`). No existing executable or personal progress was changed.
+The original source passed **248 core/Win32 checks**, which do not exercise
+the new cloud code. All **45 existing UI checks** passed only in an isolated
+diagnostic copy with the premature class-closing brace removed. That one-brace
+change was not applied to the main working copy.
+
+Twenty synthetic diagnostic observations reproduced load-detection limitations,
+invalid JSON handling, token/backup issues, UI overlap and read-only account
+fields, and clear-text password rendering during the settings animation. A
+1200 ms loopback HTTP delay blocked WinForms timer delivery for 1225–1235 ms. No
+Firebase account/project or Cemu process was contacted. The diagnostic package
+passed its 58-file manifest with `-SkipTests`, but rebuilding its extracted
+source failed because `CloudSync.cs` is absent from the package allowlist.
+
+Full scope, evidence, severity and limitations: [audit report](GROK-REVIEW-2026-10-29.md).
+The older passing-build records below do not certify this commit. Manual
+Pause/Disconnect before loading saves is still required: the new multi-field
+counter is a subset of the engine's existing regression guard, not a complete
+gameplay/load/save-slot detector. Cloud unlock synchronization is unimplemented.
 
 ## GitHub main synchronization checks — 2026-10-29, Windows x64
 

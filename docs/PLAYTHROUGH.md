@@ -23,12 +23,9 @@ attivo**, invece, non hanno ancora una condizione e non possono sbloccarsi.
 Collegati prima dell'evento e attendi circa un secondo: servono tre campioni
 consecutivi prima e dopo il passaggio. Gli oggetti già posseduti al collegamento
 non vengono assegnati retroattivamente. I traguardi già guadagnati rimangono.
-Prima di caricare un salvataggio o tornare alla selezione file, premi **Pausa** o
-**Scollega** se preferisci un controllo manuale. Dal 2026-10-29 il caricamento viene
-rilevato automaticamente quando almeno 3 campi permanenti scendono contemporaneamente
-(vedi `PermanentRegressionCount` in `src/Core.cs`); in quel caso la baseline viene
-azzerata da sola. Gli sblocchi già salvati restano. Il controllo delle regressioni
-riduce alcuni falsi passaggi ma non identifica tutti i caricamenti o i menu.
+Puoi lasciare l'app collegata durante i caricamenti: mostra **Attesa automatica**,
+poi riprende dopo la stabilizzazione. Pausa/Scollega restano facoltativi nei
+flussi verificati. Evidenze e casi ancora da verificare: [caricamenti automatici](AUTOMATIC-LOADS.md).
 
 ## Serie implementate
 

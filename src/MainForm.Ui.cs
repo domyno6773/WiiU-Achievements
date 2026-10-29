@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -46,7 +46,7 @@ namespace WiiUAchievements
         float scale = 1, lastFrame, ambientTime, sheet, sheetTarget, drawer, drawerTarget, dialog, dialogTarget;
         float scroll, scrollTarget, logScroll, tabX = -1, tabW, shownRatio, shownRupees = -1, contentHeight, introStart = -10;
         int filter, categoryFilter, chapterFilter, unreadLogs;
-        bool focusVisible;
+        bool focusVisible, cloudPage;
         RectangleF bannerRect, gridRect, drawerRect, sheetRect, dialogRect, statusPill;
 
         float W { get { return ClientSize.Width / scale; } }
@@ -66,7 +66,7 @@ namespace WiiUAchievements
             measureBitmap = new Bitmap(1, 1);
             measure = Graphics.FromImage(measureBitmap);
             measure.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
-            foreach (var box in new[] { cemuPath, player, cloudEmail, cloudPassword })
+            foreach (var box in new[] { cemuPath, player, cloudEmail, cloudPassword, cloudProject, cloudApiKey })
             {
                 box.BorderStyle = BorderStyle.None; box.BackColor = Color.White; box.ForeColor = Theme.Ink;
                 box.Font = new Font("Segoe UI", 10.5f); box.Visible = false; box.TabStop = false;
@@ -76,7 +76,8 @@ namespace WiiUAchievements
                 Controls.Add(box);
             }
             cemuPath.AccessibleName = "Percorso di Cemu.exe"; player.AccessibleName = "Profilo locale"; player.MaxLength = 64;
-            cloudEmail.AccessibleName = "Email account"; cloudPassword.AccessibleName = "Password";
+            cloudEmail.AccessibleName = "Email account cloud"; cloudPassword.AccessibleName = "Password account cloud";
+            cloudProject.AccessibleName = "Project ID Firebase"; cloudApiKey.AccessibleName = "Web API key Firebase";
             cloudPassword.UseSystemPasswordChar = true;
             animation.Interval = 15;
             animation.Tick += Animate;
@@ -195,7 +196,7 @@ namespace WiiUAchievements
                 float by = h - BottomH + 16;
                 x = AddButton("connect", Kind.Primary, "Collega Cemu", "A", Pad, by, Connect, CanConnect, 0) + 10;
                 x = AddButton("disconnect", Kind.Button, "Scollega", "Y", x, by, () => Disconnect("Sessione scollegata."), CanDisconnect, 0) + 10;
-                if (CanDisconnect) AddButton("pause", Kind.Button, paused ? "Riprendi" : "Pausa", "P", x, by, TogglePause, true, 0);
+                if (CanDisconnect) AddButton("pause", Kind.Button, paused ? "Riprendi" : "Pausa", "P", x, by, TogglePause, memory != null || demo, 0);
                 else AddButton("demo", Kind.Button, "Prova demo", "X", x, by, StartDemo, CanConnect, 0);
             }
             else ArrangeLibrary(w, h);
@@ -208,19 +209,27 @@ namespace WiiUAchievements
             {
                 float sx = sheetRect.X;
                 AddButton("back", Kind.Button, "Indietro", "B", sx + SheetW - 24 - ButtonWidth("Indietro", "B"), 13, CloseSheet, true, 1, 38);
+                if (cloudPage)
+                {
+                    string[] ids = { "field-project", "field-apikey", "field-email", "field-pass" };
+                    string[] labels = { "Project ID Firebase", "Web API key", "Email account", "Password" };
+                    TextBox[] boxes = { cloudProject, cloudApiKey, cloudEmail, cloudPassword };
+                    for (int i = 0; i < boxes.Length; i++) { var box = boxes[i]; Put(ids[i], Kind.Field, new RectangleF(sx + 24, 134 + i * 78, SheetW - 48, 40), labels[i], () => FocusField(box), !cloudBusy, 1).Box = box; }
+                    float bw = (SheetW - 72) / 3;
+                    AddButton("cloud-signup", Kind.Button, "Registrati", null, sx + 24, 450, CloudSignUp, !cloudBusy, 1, 40, bw);
+                    AddButton("cloud-login", Kind.Button, "Accedi", null, sx + 36 + bw, 450, CloudLogin, !cloudBusy, 1, 40, bw);
+                    AddButton("cloud-logout", Kind.Button, "Esci", null, sx + 48 + bw * 2, 450, CloudLogout, !cloudBusy, 1, 40, bw);
+                }
+                else
+                {
                 Put("field-cemu", Kind.Field, new RectangleF(sx + 24, 134, SheetW - 48 - 112, 40), "Percorso di Cemu.exe", () => FocusField(cemuPath), FieldsEditable, 1).Box = cemuPath;
                 AddButton("browse", Kind.Button, "Sfoglia…", null, sx + SheetW - 24 - 102, 134, Browse, FieldsEditable, 1, 40, 102);
                 Put("field-player", Kind.Field, new RectangleF(sx + 24, 212, SheetW - 48, 40), "Profilo locale", () => FocusField(player), FieldsEditable, 1).Box = player;
                 Put("sound", Kind.Toggle, new RectangleF(sx + 24, 352, SheetW - 48, 46), "Suono di sblocco", ToggleSound, true, 1).Checked = soundOn;
                 Put("ambient", Kind.Toggle, new RectangleF(sx + 24, 402, SheetW - 48, 46), "Animazioni del banner", ToggleAmbient, true, 1).Checked = ambientOn;
-                // Cloud account
-                Put("field-email", Kind.Field, new RectangleF(sx + 24, 470, SheetW - 48, 40), "Email account", () => FocusField(cloudEmail), true, 1).Box = cloudEmail;
-                Put("field-pass", Kind.Field, new RectangleF(sx + 24, 518, SheetW - 48, 40), "Password", () => FocusField(cloudPassword), true, 1).Box = cloudPassword;
-                float btnW = (SheetW - 48 - 24) / 3f;
-                Put("cloud-signup", Kind.Button, new RectangleF(sx + 24, 570, btnW, 42), "Registrati", CloudSignUp, true, 1);
-                Put("cloud-login", Kind.Button, new RectangleF(sx + 24 + btnW + 12, 570, btnW, 42), "Accedi", CloudLogin, true, 1);
-                Put("cloud-logout", Kind.Button, new RectangleF(sx + 24 + (btnW + 12) * 2, 570, btnW, 42), "Esci", CloudLogout, true, 1);
                 AddButton("test", Kind.Button, "Prova notifica", null, sx + 24, 462, TestToast, true, 1, 40);
+                AddButton("cloud-page", Kind.Button, "Account cloud…", null, sx + SheetW - 196, 462, OpenCloudPage, true, 1, 40, 172);
+                }
             }
             if (dialog > 0 && detail != null)
             {
@@ -231,18 +240,18 @@ namespace WiiUAchievements
         void PlaceFields()
         {
             bool show = sheet >= 1 && sheetTarget >= 1;
-            foreach (var box in new[] { cemuPath, player, cloudEmail, cloudPassword })
+            foreach (var box in new[] { cemuPath, player, cloudEmail, cloudPassword, cloudProject, cloudApiKey })
             {
                 Widget w;
-                string id = box == cemuPath ? "field-cemu" : box == player ? "field-player" : box == cloudEmail ? "field-email" : "field-pass";
+                string id = box == cemuPath ? "field-cemu" : box == player ? "field-player" : box == cloudEmail ? "field-email" : box == cloudPassword ? "field-pass" : box == cloudProject ? "field-project" : "field-apikey";
                 if (show && widgets.TryGetValue(id, out w) && w.Visible)
                 {
                     var r = w.Bounds;
                     int height = box.PreferredHeight;
                     var device = new Rectangle((int)Math.Round((r.X + 13) * scale), (int)Math.Round(r.Y * scale + (r.Height * scale - height) / 2), (int)((r.Width - 26) * scale), height);
                     if (box.Bounds != device) box.Bounds = device;
-                    box.ReadOnly = !FieldsEditable;
-                    box.BackColor = FieldsEditable ? Color.White : Color.FromArgb(240, 243, 245);
+                    box.ReadOnly = box == cemuPath || box == player ? !FieldsEditable : cloudBusy;
+                    box.BackColor = box.ReadOnly ? Color.FromArgb(240, 243, 245) : Color.White;
                     if (!box.Visible) box.Visible = true;
                 }
                 else if (box.Visible)
@@ -912,6 +921,21 @@ namespace WiiUAchievements
             Theme.Text(g, "Impostazioni", Theme.Font(22, Weight.Heavy), Theme.Ink, new RectangleF(sx + 34, 0, 220, 64), StringAlignment.Near, StringAlignment.Center, false);
             DrawButton(g, widgets["back"], t);
 
+            if (cloudPage)
+            {
+                Section(g, "ACCOUNT CLOUD · OPZIONALE", sx, 84);
+                string[] ids = { "field-project", "field-apikey", "field-email", "field-pass" };
+                string[] labels = { "Project ID Firebase", "Web API key", "Email", "Password" };
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    Theme.Text(g, labels[i], Theme.Font(14, Weight.Bold), Theme.Ink, new RectangleF(sx, 108 + i * 78, cw, 22));
+                    DrawField(g, widgets[ids[i]], t);
+                }
+                DrawButton(g, widgets["cloud-signup"], t); DrawButton(g, widgets["cloud-login"], t); DrawButton(g, widgets["cloud-logout"], t);
+                Theme.Text(g, cloudMessage, Theme.Font(13, Weight.Bold), Theme.Muted, new RectangleF(sx, 508, cw, 60), StringAlignment.Near, StringAlignment.Near, true);
+                Theme.Text(g, "Richiede Firebase Authentication email/password e Firestore configurati. I progressi restano locali anche senza rete. Vedi docs/CLOUD.md.", Theme.Font(12, Weight.Regular), Theme.Muted, new RectangleF(sx, 578, cw, 80), StringAlignment.Near, StringAlignment.Near, true);
+                return;
+            }
             Section(g, "COLLEGAMENTO", sx, 84);
             Theme.Text(g, "Percorso di Cemu.exe", Theme.Font(14, Weight.Bold), Theme.Ink, new RectangleF(sx, 108, cw, 22));
             DrawField(g, widgets["field-cemu"], t);
@@ -926,20 +950,8 @@ namespace WiiUAchievements
             DrawToggle(g, widgets["ambient"], "Si fermano mentre giochi in Cemu", t);
             DrawButton(g, widgets["test"], t);
 
-            Section(g, "ACCOUNT CLOUD", sx, 460);
-            Theme.Text(g, "Email", Theme.Font(14, Weight.Bold), Theme.Ink, new RectangleF(sx, 484, cw, 22));
-            DrawField(g, widgets["field-email"], t);
-            Theme.Text(g, "Password", Theme.Font(14, Weight.Bold), Theme.Ink, new RectangleF(sx, 532, cw, 22));
-            DrawField(g, widgets["field-pass"], t);
-            DrawButton(g, widgets["cloud-signup"], t);
-            DrawButton(g, widgets["cloud-login"], t);
-            DrawButton(g, widgets["cloud-logout"], t);
-            string cloudStatus = cloud != null && cloud.IsSignedIn ? "Connesso come " + (cloud.Email ?? "utente") : "Non connesso";
-            Theme.Text(g, cloudStatus, Theme.Font(12.5f, Weight.Bold), cloud != null && cloud.IsSignedIn ? Theme.Accent : Theme.Muted,
-                new RectangleF(sx, 620, cw, 22));
-
-            Section(g, "CONFIGURAZIONE SUPPORTATA", sx, 660);
-            var info = new RectangleF(sx, 684, cw, 76);
+            Section(g, "CONFIGURAZIONE SUPPORTATA", sx, 526);
+            var info = new RectangleF(sx, 550, cw, 76);
             Theme.Fill(g, info, 12, Color.White, Color.FromArgb(246, 249, 250));
             Theme.Stroke(g, info, 12, Theme.Line, 1);
             var f = Theme.Font(13, Weight.Regular);
@@ -953,6 +965,7 @@ namespace WiiUAchievements
         {
             Theme.Text(g, text, Theme.Font(12, Weight.Heavy), Theme.Accent, new RectangleF(x, y, 360, 18));
         }
+        static string FieldDisplayText(TextBox box) { return box.UseSystemPasswordChar ? new string('●', box.TextLength) : box.Text; }
         void DrawField(Graphics g, Widget w, float t)
         {
             var r = w.Bounds;
@@ -960,7 +973,7 @@ namespace WiiUAchievements
             Theme.Fill(g, r, 10, w.Enabled ? Color.White : Color.FromArgb(240, 243, 245), w.Enabled ? Color.White : Color.FromArgb(240, 243, 245));
             Theme.Stroke(g, r, 10, active ? Theme.Accent : Theme.Mix(Color.FromArgb(192, 201, 209), Theme.Accent, w.Hover * 0.7f), active ? 2 : 1.2f);
             if (active) Theme.Cursor(g, r, 10, 0.55f);
-            if (!w.Box.Visible) Theme.Text(g, w.Box.Text, Theme.Font(14, Weight.Regular), w.Enabled ? Theme.Ink : Theme.Muted, Theme.Inflate(r, -13, 0), StringAlignment.Near, StringAlignment.Center, false);
+            if (!w.Box.Visible) Theme.Text(g, FieldDisplayText(w.Box), Theme.Font(14, Weight.Regular), w.Enabled ? Theme.Ink : Theme.Muted, Theme.Inflate(r, -13, 0), StringAlignment.Near, StringAlignment.Center, false);
             Theme.Cursor(g, r, 10, FocusStrength(w, t));
         }
         void DrawToggle(Graphics g, Widget w, string help, float t)
@@ -1187,8 +1200,9 @@ namespace WiiUAchievements
         }
 
         // ---------------------------------------------------------------- actions
-        void OpenSheet() { sheetTarget = 1; hovered = null; focused = null; Kick(); }
-        void CloseSheet() { sheetTarget = 0; focused = null; PlaceFields(); Kick(); }
+        void OpenCloudPage() { cloudPage = true; focused = hovered = null; Arrange(); PlaceFields(); Invalidate(); Kick(); }
+        void OpenSheet() { cloudPage = false; sheetTarget = 1; hovered = null; focused = null; Kick(); }
+        void CloseSheet() { if (cloudPage) { cloudPage = false; cloudPassword.Clear(); Arrange(); PlaceFields(); Invalidate(); return; } cloudPassword.Clear(); sheetTarget = 0; focused = null; PlaceFields(); Kick(); }
         void ToggleDrawer() { drawerTarget = drawerTarget > 0 ? 0 : 1; if (drawerTarget > 0) { unreadLogs = 0; logScroll = 0; } Kick(); }
         void CloseDrawer() { drawerTarget = 0; Kick(); }
         void OpenDetail(Achievement a) { detail = a; dialogTarget = 1; hovered = null; Kick(); }

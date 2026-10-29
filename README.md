@@ -1,5 +1,12 @@
 # Wii U Achievements — alpha 0.3
 
+**Caricamenti automatici (30 ottobre 2026):** la build corrente è in
+`build-check/automatic-load-final/`. Puoi collegarti anche dalla selezione file e
+lasciare l'app attiva durante i caricamenti; attesa, ripresa e ricollegamento
+sono automatici per Cemu 2.6 / EUR v0 / cdc68acd. Vedi
+[prove e limiti](docs/AUTOMATIC-LOADS.md). Il progetto Firebase esistente è già
+preselezionato; le sue regole attuali bloccano però la sincronizzazione cloud.
+
 **Revisione rarità:** bronzo, argento e oro sono assegnati esplicitamente;
 il platino è riservato al futuro trofeo conclusivo. Ordine e descrizioni sono
 stati rivisti senza cambiare punti o progressi. Vedi [criteri di rarità](docs/RARITIES.md).
@@ -26,8 +33,8 @@ La build corretta in `build-check/scroll-fix/` usa una cache limitata delle
 schede per rendere fluido lo scorrimento. **La tunica verde ora è attiva**:
 carica il salvataggio precedente con l'app scollegata, collega Cemu e attendi
 un secondo prima di parlare con la nonna. Una tunica già posseduta al collegamento
-non viene assegnata retroattivamente. Prima di ogni caricamento usa Pausa o
-Scollega. Gli altri 93 traguardi non attivi rimangono esplicitamente distinti.
+non viene assegnata retroattivamente. Quella versione richiedeva Pausa/Scollega;
+la build corrente gestisce automaticamente i flussi di caricamento verificati. Gli altri 93 traguardi non attivi rimangono esplicitamente distinti.
 
 ## Repository e copia locale
 
@@ -147,7 +154,13 @@ Una disconnessione, un campione non valido o una pausa di campionamento superior
 
 I progressi sono in `data/progress/`, separati per nome del profilo, titolo, versione, hash RPX e revisione del set. Gli obiettivi maturati nello stesso campione vengono salvati insieme, prima di notificare qualsiasi sblocco. La scrittura usa un file temporaneo e la sostituzione atomica; il precedente file rimane come backup `.bak`. Se il file è danneggiato, viene conservato prima del recupero dal backup.
 
-Per una nuova partita scegli un altro profilo locale. **Questa alpha non riconosce ancora automaticamente il file di salvataggio selezionato né il passaggio tra salvataggi nello stesso gioco.** Caricare una partita differente durante la registrazione può essere interpretato come un cambiamento di progresso: metti in pausa prima del caricamento e riprendi dopo essere tornato nel gioco, oppure scollega e ricollega l'app. **Pausa** ferma soltanto la registrazione degli achievement: il gioco continua. Alla ripresa vengono azzerate le condizioni in corso e acquisito un nuovo stato iniziale; gli sblocchi salvati rimangono. La pausa non riconosce automaticamente menu o cambi di salvataggio. Non è presente una modalità hardcore o una verifica anticheat. I punti sono esclusivamente locali e non vengono inviati a RetroAchievements.
+Per una nuova partita scegli un altro profilo locale. La build corrente sospende
+e riprende automaticamente il rilevamento usando scena, richiesta di transizione
+e riferimenti di Link. I caricamenti già avanzati acquisiscono una nuova baseline.
+Gli sblocchi salvati restano. Lo slot non cambia l'identità del profilo locale;
+vedi [stati automatici e prove](docs/AUTOMATIC-LOADS.md). Pausa/Scollega rimangono
+comandi facoltativi. Non è presente una modalità hardcore o una verifica anticheat;
+non viene effettuato alcun collegamento con RetroAchievements.
 
 Le notifiche sono finestre desktop: in alcune modalità di schermo intero potrebbero non apparire sopra il gioco. L'obiettivo viene comunque salvato e mostrato nell'app. La prova di notifica è riuscita nella configurazione corrente dell'utente.
 

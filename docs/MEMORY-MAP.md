@@ -14,6 +14,16 @@ host address = current guestBase + Wii U guest address
 Do not persist or reuse a previously observed host base or process ID. The guest
 header address below is still a fixed profile assumption, not a discovered symbol.
 
+## Automatic context signals (2026-10-30)
+
+The production reader additionally reads 26 bytes at guest `0x104741E4` and 16
+bytes at `0x10474BDC`, on both sides of the progression-window read. Current/next
+stage, request byte at +0x18 and two Link references are checked. `Name` and
+`sea_T` cannot count as playable worlds. Exact EUR file-select/load/restart,
+inventory and area evidence, source derivation, stability rules and remaining
+cases are recorded in [AUTOMATIC-LOADS.md](AUTOMATIC-LOADS.md). These are independent
+of the experimental progression decoders below. No host addresses are persisted.
+
 ## Current fields
 
 The **Playthrough TEST** development build now reads the `0x724`-byte window

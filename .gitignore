@@ -9,3 +9,7 @@ package-manifest.json
 
 # Firebase cloud credentials (never commit)
 data/cloud.xml
+
+# Firebase tooling state and local diagnostics
+.firebase/
+firebase-debug*.log

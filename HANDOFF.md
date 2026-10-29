@@ -1,6 +1,30 @@
-
-**UI account cloud (con Registrati) (2026-10-29):** nelle Impostazioni è stata aggiunta la sezione ACCOUNT CLOUD con campi Email/Password e pulsanti Accedi/Esci, nello stesso stile grafico custom-drawn. I metodi `CloudLogin` / `CloudLogout` in `MainForm.cs` chiamano `CloudSync`. Lo stato (connesso / non connesso) è mostrato sotto i pulsanti.
 # Start here — handoff for another AI or developer
+
+**Automatic loads (2026-10-30):** the exact Cemu 2.6 / EUR v0 / cdc68acd reader
+now observes live-checked stage/transition/player signals, guards reads on both
+sides of the save window, and resumes after 750 ms of coherent context. Supported
+load flows no longer require manual pause/disconnect. A watcher reconnects the
+same supported process after restart; explicit disconnect cancels it. Live
+file-select/load, inventory/area and full-app restart tests passed with isolated
+progress and no retrospective awards. See `docs/AUTOMATIC-LOADS.md` for evidence
+and remaining cases; experimental achievement mappings are not re-certified.
+
+**Firebase account checked (2026-10-30):** project `wiiu-achievements`, existing
+web app, email/password enabled, Standard Native `(default)` in nam5/free tier.
+The deployed rules currently deny all reads/writes. No backend permissions were
+changed. Public SDK defaults are prefilled via `CloudProject.cs`; login tokens
+stay local/DPAPI. See `docs/CLOUD.md`. No real cloud unlock transfer is claimed.
+
+**Corrections (2026-10-30):** the broken account integration from `8b292ef` has
+been repaired locally. Cloud operations are serialized background tasks; actual
+unlock documents are pushed/pulled with durable retries from local progress.
+Tokens use Windows DPAPI, renew on expiry/restart and leave no credential backup.
+Account settings have a separate minimum-size page. See `docs/CLOUD.md` for
+configuration, backend requirements and limits. Backend provisioning/live auth
+and Firestore rules are NOT validated. The later automatic-load section above supersedes the earlier manual-only
+recording boundary; regression counts alone still do not identify save slots.
+The audit `docs/GROK-REVIEW-2026-10-29.md` describes the original broken commit,
+not the repaired working tree. IDs/revision/personal progress remain unchanged.
 
 This folder is the complete source project. No previous chat, account, cloud
 service, hidden package, or original workspace path is needed to understand it.
@@ -15,8 +39,6 @@ set-completion objective. Text/order corrections are presentation-only. See
 `docs/RARITIES.md`. New isolated build: `build-check/rarity/`. IDs, points,
 conditions, experimental flags and progress identity remain unchanged.
 
-
-**Automatic load detection (2026-10-29):** multi-field permanent progression regression is now detected in `MainForm.Tick`. When at least 3 permanent fields (HeroClothes + WindWakerProgression fields, excluding grandma_and_soup) drop between samples, the engine is reset automatically and a log line is written. This is an extension of the existing `RegressesFrom` safety; already-unlocked achievements are never removed. Manual Pause remains available as a fallback. See `src/Core.cs` (`PermanentRegressionCount`) and `src/MainForm.cs`.
 
 **Current development build — playthrough series (2026-10-28):** at the user's
 explicit request to implement batches before they playtest them, there are now
@@ -103,7 +125,6 @@ Open this folder in your editor. On Windows, run these commands from its root:
 
 ```powershell
 
-**Cloud sync skeleton (2026-10-29):** optional Firebase Auth + Firestore layer in `src/CloudSync.cs`. Local `ProgressStore` remains authoritative offline. Credentials live in `data/cloud.xml` (gitignored). Sign-in, pull and push entry points exist; full merge of unlock documents is the next concrete step once a Firebase project is configured. No network failure can interrupt local play.
 # Existing binary: normal UI, explicit connection button
 .\WiiUAchievements.exe
 
@@ -152,51 +173,29 @@ Source entry points:
 - `src/GameSession.cs`: identification from the active Cemu log.
 - `src/MemoryReader.cs`: process reader, guest-base discovery, calibration scanner.
 - `src/Core.cs`: snapshot parsing, rules, achievement engine, XML progress store.
+- `src/Gameplay.cs`: context decoding, automatic waiting and guarded continuity.
+- `src/CloudSync.cs`, `src/CloudProject.cs`: background cloud client and public project defaults.
 - `achievements.xml`: 16 thresholds in legacy-compatible format. `achievements-story.xml`: active tunic rule. `achievements-planned.xml`: 93 pending targets; `docs/ACHIEVEMENTS.md` explains promotion.
 - `tests/CoreTests.cs`: executable regression suite, including the synthetic child.
 - `tests/Probe.cs`: small optional live-memory diagnostic; not the app entry point.
 
 ## Recommended next task
 
-**Current priority:** the user can now play normally and check experimental
-notifications as they reach each group. Do not require repeated acquisition
-rituals for every target. Retain the experimental label until exact EUR evidence
-supports promotion. Continue research on the 40 genuinely unimplemented targets
-and improve automatic load/gameplay validity. Read `docs/PLAYTHROUGH.md` first.
+Use `build-check/automatic-load-final/` for the current local build. The stage/load
+reader and automatic reconnect are implemented for the exact profile; see
+`docs/AUTOMATIC-LOADS.md` for real evidence and limits. Next verify death/continue,
+new game/hero mode, different save slots and late-game transitions. Do not
+reintroduce a generic multi-field regression counter as load identification.
 
-**Next, on the real PC, validate alpha 0.3 with Cemu.** Run `build.ps1` and
-`tests\run.ps1`, then start `--demo`. Check:
+Continue normal progressive playtesting of the 53 experimental detectors and
+research the remaining 40 targets. Their status is independent of the new load
+boundary and none was certified by these tests.
 
-- fonts, layout and DPI;
-- the layered popup over Cemu, including in fullscreen;
-- the chime, the keyboard navigation and screen-reader names.
-
-Also check **Giochi**, **Pausa / Riprendi**, a below-threshold period of at least
-three samples and a subsequent live crossing, persistence and reconnects. Record
-results in `docs/VALIDATION.md`. The committed alpha 0.2 ZIP is a historical
-artifact; use `build.ps1` or a successful alpha 0.3 CI artifact for current code.
-
-**Distinguish active gameplay, menus, loading, and save slots before adding story
-achievements.** Manual pause/resume now creates an explicit recording boundary, but the current
-app still reads persistent save values without proving
-that Link is controllable. Loading a different save can be misread as progress.
-
-Then validate initial item acquisition (telescope, sword, shield) with before/after
-observations on the supported EUR version. Add fields and conditions only after
-checking the actual session and recording evidence. Do not promote offsets from
-an online trainer to verified offsets without testing them.
-
-The expanded catalog is implemented in `build-check/` for local review; the
-already-running root EXE is not replaced. The immediate memory task is still
-gameplay/save continuity, then the telescope/sword/shield before/after checks.
-The user reported no initial items; the three candidate bytes read zero once.
-This equipment baseline alone does not validate acquisition or authorize promotion
-of telescope/sword/shield. The tunic's separate validated cycle is recorded in
-`docs/MEMORY-MAP.md` and `docs/VALIDATION.md`.
-
-The calibration scanner has automated coverage but is not exposed in the UI.
-Automatic relocation of the save header, pointer chains, per-frame events,
-hardcore mode, online profiles, and other regions are not implemented.
+The existing Firebase project/provider/database were inspected successfully.
+Firestore currently denies every client read/write. The next backend action is
+to prepare/test scoped ownership rules and publish only if authorized; no rule
+changes or real unlock transfer have been made here. Public project defaults are
+already filled in the account page. Read `docs/CLOUD.md` before changing access.
 
 ## What to request from the user for live work
 

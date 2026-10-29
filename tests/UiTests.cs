@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -115,6 +115,70 @@ class UiTests
         }
         Set(form, "scroll", 0f); Set(form, "scrollTarget", 0f);
     }
+    static void AutomaticWaitingChecks(MainForm form, string output)
+    {
+        var progress = new ProgressStore(Path.Combine(output, "automatic-wait"), "isolated", "synthetic");
+        var engine = new AchievementEngine((List<Achievement>)Get(form, "rules"), progress);
+        engine.Update(new GameSnapshot { Utc = DateTime.UtcNow, Context = new GameplayContext(GameplayState.Menu, "Name", 0) });
+        Set(form, "engine", engine); Set(form, "progress", progress); Set(form, "recording", true);
+        Call(form, "SetRecordingStatus");
+        Check((string)Get(form, "statusTitle") == "Attesa automatica" && (bool)Get(form, "recording") && Get(form, "current") == null,
+            "Automatic load wait preserves recording intent and clears stale displayed values");
+        Set(form, "autoReconnect", true); Call(form, "Arrange");
+        Check(!(bool)Get(Widget(form, "pause"), "Enabled") && (bool)Get(Widget(form, "disconnect"), "Enabled"),
+            "During reconnect the unavailable pause is disabled and Scollega can cancel the watcher");
+        Set(form, "connecting", true);
+        Call(form, "Disconnect", "Synthetic automatic reconnect cancellation");
+        Check(!(bool)Get(form, "autoReconnect") && !(bool)Get(form, "recording") && !(bool)Get(form, "connecting"),
+            "Explicit disconnect cancels automatic reconnect intent");
+        Set(form, "engine", null); Set(form, "progress", null);
+    }
+    static void CloudChecks(MainForm form, string output)
+    {
+        Call(form, "OpenSheet"); Settle(); Click(form, "cloud-page");
+        Check(((TextBox)Get(form, "cloudEmail")).Visible && !((TextBox)Get(form, "player")).Visible, "Cloud account has a separate settings page");
+        float scale = (float)Get(form, "scale"); form.ClientSize = new Size((int)(900 * scale), (int)(680 * scale)); Settle();
+        var ids = new[] { "field-project", "field-apikey", "field-email", "field-pass", "cloud-signup", "cloud-login", "cloud-logout" };
+        var boxes = ids.Select(id => (RectangleF)Get(Widget(form, id), "Bounds")).ToArray();
+        Check(boxes.All(b => b.Bottom < 680) && !boxes.Where((b, i) => boxes.Skip(i + 1).Any(b.IntersectsWith)).Any(), "All cloud controls fit without overlap at minimum size");
+        Set(form, "demo", true); Call(form, "PlaceFields");
+        Check(!((TextBox)Get(form, "cloudEmail")).ReadOnly && !((TextBox)Get(form, "cloudPassword")).ReadOnly, "Account fields remain editable during a game/demo connection");
+        Set(form, "demo", false);
+        var password = (TextBox)Get(form, "cloudPassword"); password.Text = "SYNTHETIC_SECRET";
+        var display = typeof(MainForm).GetMethod("FieldDisplayText", BindingFlags.Static | BindingFlags.NonPublic);
+        Check(!((string)display.Invoke(null, new object[] { password })).Contains("SECRET"), "Animation fallback masks the password without the native textbox");
+        form.SavePreview(Path.Combine(output, "cloud-small.png"));
+        var gate = new ManualResetEvent(false); var entered = new ManualResetEvent(false);
+        Func<string, string, string, string, string> transport = (method, url, body, token) =>
+        {
+            entered.Set(); gate.WaitOne(5000);
+            return "{ \"idToken\": \"SYNTHETIC_ID\", \"refreshToken\": \"SYNTHETIC_REFRESH\", \"localId\": \"synthetic_user\", \"expiresIn\": \"3600\" }";
+        };
+        var constructor = typeof(CloudSync).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
+        Set(form, "cloud", constructor.Invoke(new object[] { Path.Combine(output, "cloud-ui-fixture"), transport }));
+        ((TextBox)Get(form, "cloudProject")).Text = "synthetic-project"; ((TextBox)Get(form, "cloudApiKey")).Text = "SYNTHETIC_KEY";
+        ((TextBox)Get(form, "cloudEmail")).Text = "synthetic@example.invalid";
+        Call(form, "CloudLogin");
+        try
+        {
+            Check(entered.WaitOne(2000) && (bool)Get(form, "cloudBusy") && password.TextLength == 0, "Account request runs in background and clears the password immediately");
+            int ticks = 0;
+            using (var heartbeat = new System.Windows.Forms.Timer { Interval = 25 })
+            {
+                heartbeat.Tick += delegate { ticks++; }; heartbeat.Start(); Settle(); heartbeat.Stop();
+                Check(ticks > 3 && (bool)Get(form, "cloudBusy"), "WinForms timers keep delivering while the real account request is pending");
+            }
+        }
+        finally { gate.Set(); }
+        for (int i = 0; i < 100 && (bool)Get(form, "cloudBusy"); i++) { Application.DoEvents(); Thread.Sleep(20); }
+        Check(!(bool)Get(form, "cloudBusy") && ((CloudSync)Get(form, "cloud")).IsSignedIn, "Completed account request resumes UI with authenticated status");
+        gate.Dispose(); entered.Dispose();
+        Call(form, "CloudLogout");
+        for (int i = 0; i < 100 && (bool)Get(form, "cloudBusy"); i++) { Application.DoEvents(); Thread.Sleep(20); }
+        Call(form, "CloseSheet"); Settle(); Call(form, "CloseSheet"); Settle();
+        Check(password.TextLength == 0 && !password.Visible, "Leaving account settings clears and hides password");
+        form.ClientSize = new Size((int)(1120 * scale), (int)(800 * scale));
+    }
     [STAThread]
     static int Main(string[] args)
     {
@@ -127,7 +191,9 @@ class UiTests
             {
                 // This executable is built in an isolated test directory. It never attaches to Cemu.
                 Set(form, "soundOn", false); Set(form, "ambientOn", false);
-                form.Show(); Settle();
+                form.Show(); form.Location = new Point(-20000, -20000); Settle();
+                CloudChecks(form, output);
+                AutomaticWaitingChecks(form, output);
                 var curated = (List<Achievement>)Get(form, "rules");
                 Check(Art.For(curated.Single(a => a.Id == "wallet-5000"), curated).Tier == Tier.Silver &&
                     Art.For(curated.Single(a => a.Id == "hearts-20"), curated).Tier == Tier.Gold,
@@ -195,7 +261,7 @@ class UiTests
                     "Displaying pending objectives while sampling does not alter unlocks");
                 Click(form, "tab0");
                 Click(form, "pause");
-                Check((bool)Get(form, "paused") && !(bool)Get(form, "recording") && Get(form, "current") == null, "Pause stops recording and clears transient state");
+                Check((bool)Get(form, "paused") && !(bool)Get(form, "recording") && Get(form, "current") == null, "Pause stops recording and clears transient state (paused=" + Get(form, "paused") + ", recording=" + Get(form, "recording") + ", sample=" + (Get(form, "current") != null) + ", sheet=" + Get(form, "sheetTarget") + ", dialog=" + Get(form, "dialogTarget") + ")");
                 Check((int)form.GetType().GetProperty("UnlockedCount", Private).GetValue(form, null) == 1, "Pause preserves earned objectives");
                 form.SavePreview(Path.Combine(output, "paused.png"));
                 Click(form, "games"); Key(form, Keys.B);

@@ -16,7 +16,7 @@ namespace WiiUAchievements
         enum StatusKind { Idle, Busy, Live, Demo, Paused, Error }
         sealed class PendingToast { public Achievement Achievement; public string Header; public bool Retry; }
 
-        readonly TextBox cemuPath = new TextBox(), player = new TextBox(), cloudEmail = new TextBox(), cloudPassword = new TextBox();
+        readonly TextBox cemuPath = new TextBox(), player = new TextBox(), cloudEmail = new TextBox(), cloudPassword = new TextBox(), cloudProject = new TextBox(), cloudApiKey = new TextBox();
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         readonly Queue<PendingToast> toasts = new Queue<PendingToast>();
         readonly List<string> logLines = new List<string>();
@@ -31,6 +31,13 @@ namespace WiiUAchievements
         ProgressStore progress;
         AchievementEngine engine;
         CloudSync cloud;
+        bool cloudBusy;
+        DateTime nextCloudSync;
+        bool autoReconnect;
+        int connectionGeneration;
+        readonly System.Windows.Forms.Timer connectionWatch = new System.Windows.Forms.Timer();
+        string cloudMessage = "Cloud opzionale: configura un progetto Firebase.";
+        readonly System.Windows.Forms.Timer cloudTimer = new System.Windows.Forms.Timer();
         GameSnapshot current;
         ulong guestBase;
         DateTime identityCheck;
@@ -46,6 +53,9 @@ namespace WiiUAchievements
             root = AppDomain.CurrentDomain.BaseDirectory;
             dataRoot = Path.Combine(root, "data");
             cloud = new CloudSync(dataRoot);
+            cloudProject.Text = cloud.ProjectId ?? CloudProject.Id; cloudApiKey.Text = cloud.ApiKey ?? CloudProject.WebApiKey; cloudEmail.Text = cloud.Email ?? "";
+            if (cloud.Warning != null) cloudMessage = cloud.Warning;
+            cloudTimer.Interval = 30000; cloudTimer.Tick += delegate { SyncCloud(); }; cloudTimer.Start();
             rules = selectedGame.LoadRules(root);
             foreach (var a in rules) arts[a.Id] = Art.For(a, rules);
             Text = "Wii U Achievements — " + selectedGame.Title;
@@ -64,10 +74,11 @@ namespace WiiUAchievements
                 progress = null; engine = null; current = null;
                 RefreshList();
             };
+            connectionWatch.Interval = 1000; connectionWatch.Tick += delegate { WatchConnection(); }; connectionWatch.Start();
             timer.Interval = 100;
             timer.Tick += Tick;
             Shown += delegate { if (startDemo) StartDemo(); else if (autoConnect) Connect(); };
-            FormClosing += delegate { timer.Stop(); if (memory != null) memory.Dispose(); if (activeToast != null) activeToast.Close(); };
+            FormClosing += delegate { connectionGeneration++; timer.Stop(); cloudTimer.Stop(); cloudTimer.Dispose(); connectionWatch.Stop(); connectionWatch.Dispose(); if (memory != null) memory.Dispose(); if (activeToast != null) activeToast.Close(); };
             RefreshList();
             hint = DefaultHint;
             SetStatus("Pronto al collegamento", "Avvia il gioco e carica un salvataggio, poi premi Collega Cemu.", StatusKind.Idle);
@@ -109,14 +120,15 @@ namespace WiiUAchievements
             player.ReadOnly = value; cemuPath.ReadOnly = value;
             PlaceFields(); Invalidate(); Kick();
         }
-        const string DefaultHint = "Il caricamento di un salvataggio viene rilevato automaticamente quando possibile. In caso di dubbio usa ancora Pausa.";
-        bool FieldsEditable { get { return memory == null && !demo && !connecting; } }
-        bool CanConnect { get { return !connecting && memory == null && !demo; } }
-        bool CanDisconnect { get { return memory != null || demo; } }
+        const string DefaultHint = "Caricamenti e selezione file: attesa e ripresa automatiche. Puoi lasciare l'app collegata.";
+        bool FieldsEditable { get { return memory == null && !demo && !connecting && !autoReconnect; } }
+        bool CanConnect { get { return !connecting && memory == null && !demo && !autoReconnect; } }
+        bool CanDisconnect { get { return memory != null || demo || autoReconnect; } }
 
         async void Connect()
         {
             if (connecting || memory != null || demo) return;
+            int generation = ++connectionGeneration;
             connecting = true; SetConnected(true);
             SetStatus("Collegamento…", "Identificazione della sessione e verifica dello spazio Wii U.", StatusKind.Busy);
             ProcessMemory attached = null;
@@ -132,7 +144,7 @@ namespace WiiUAchievements
                 gameReader = activeProfile.CreateReader();
                 attached = new ProcessMemory(session.Pid);
                 var bases = await Task.Run(() => attached.FindGuestBases());
-                if (IsDisposed || Disposing) { attached.Dispose(); attached = null; return; }
+                if (generation != connectionGeneration || IsDisposed || Disposing) { attached.Dispose(); attached = null; return; }
                 if (!bases.Contains(session.GuestBase)) throw new InvalidOperationException("Il log e la memoria del processo non corrispondono. Ricollega dopo l'avvio del gioco.");
                 guestBase = session.GuestBase;
                 var sample = gameReader.Read(attached, guestBase);
@@ -143,21 +155,23 @@ namespace WiiUAchievements
                 memory = attached; attached = null; demo = false; paused = false; recording = true;
                 identityCheck = DateTime.MinValue;
                 connecting = false;
-                SetConnected(true); UpdateStats(sample); RefreshList(); timer.Start();
+                autoReconnect = false;
+                SetConnected(true); if (!engine.WaitingForGameplay) UpdateStats(sample); else current = null; RefreshList(); timer.Start();
                 SetRecordingStatus();
                 hint = DefaultHint;
-                Log(selectedGame.Title + " · " + activeProfile.Label + " riconosciuta. " + sample.Rupees + " rupie, " + (sample.Health / 4m) + "/" + (sample.MaxHealth / 4m) + " cuori.");
+                Log(selectedGame.Title + " · " + activeProfile.Label + " riconosciuta. " + (engine.WaitingForGameplay ? "Attesa automatica della partita." : sample.Rupees + " rupie, " + (sample.Health / 4m) + "/" + (sample.MaxHealth / 4m) + " cuori."));
                 if (progress.Warning != null) Log(progress.Warning);
             }
             catch (Exception ex)
             {
                 if (attached != null) attached.Dispose();
+                if (generation != connectionGeneration || IsDisposed || Disposing) return;
                 engine = null; progress = null; current = null; gameReader = null; activeProfile = null;
                 connecting = false;
                 SetConnected(false);
                 SetStatus("Collegamento non riuscito", ex.Message, StatusKind.Error); Log(ex.Message);
             }
-            finally { connecting = false; Invalidate(); }
+            finally { if (generation == connectionGeneration) connecting = false; if (!IsDisposed && !Disposing) Invalidate(); }
         }
         static bool SamePath(Process process, string expected)
         {
@@ -166,6 +180,7 @@ namespace WiiUAchievements
         }
         void Disconnect(string reason)
         {
+            connectionGeneration++; connecting = false; autoReconnect = false;
             // Demo unlocks live in a throwaway store and should not linger on screen.
             if (demo) progress = null;
             timer.Stop(); recording = false; demo = false; paused = false;
@@ -194,12 +209,13 @@ namespace WiiUAchievements
         }
         void SetRecordingStatus()
         {
-            if (demo) SetStatus("DEMO · simulazione", "Dati simulati. I progressi della tua partita restano separati.", StatusKind.Demo);
+            if (!demo && engine != null && engine.WaitingForGameplay) SetAutomaticWaiting(engine.GameplayMessage);
+            else if (demo) SetStatus("DEMO · simulazione", "Dati simulati. I progressi della tua partita restano separati.", StatusKind.Demo);
             else SetStatus("Collegato · registrazione attiva", selectedGame.Title + " · " + activeProfile.Label + " · progressi locali", StatusKind.Live);
         }
         void TogglePause()
         {
-            if (!CanDisconnect || connecting) return;
+            if (memory == null && !demo || connecting) return;
             paused = !paused; recording = !paused;
             engine.Reset(); current = null; identityCheck = DateTime.MinValue;
             if (paused)
@@ -254,29 +270,51 @@ namespace WiiUAchievements
                         identityCheck = DateTime.UtcNow;
                     }
                     sample = gameReader.Read(memory, guestBase);
-                    // Automatic load/save detection: multi-field permanent regression
-                    // that cannot occur in normal continuous play.
-                    if (current != null && sample.PermanentRegressionCount(current) >= 3)
-                    {
-                        Log("Caricamento rilevato automaticamente: baseline azzerata.");
-                        engine.Reset();
-                    }
+
                 }
-                foreach (var a in engine.Update(sample))
+                var awarded = engine.Update(sample);
+                if (engine.WaitingForGameplay) { SetAutomaticWaiting(engine.GameplayMessage); return; }
+                if (statusTitle == "Attesa automatica") SetRecordingStatus();
+                foreach (var a in awarded)
                 {
                     Log((demo ? "[DEMO] " : a.Experimental ? "[TEST] " : "") + "Sbloccato: " + a.Title + " (+" + a.Points + ")");
-                    if (!demo && cloud != null && cloud.IsSignedIn) cloud.Push(new[] { a.Id }, DateTime.UtcNow, session != null ? session.Fingerprint + "|" + selectedGame.SetRevision : "unknown");
+
                     toasts.Enqueue(new PendingToast { Achievement = a, Header = demo ? "DEMO · OBIETTIVO SBLOCCATO" : a.Experimental ? "SBLOCCATO · SPERIMENTALE" : "OBIETTIVO SBLOCCATO" });
                     Celebrate(a); RefreshList();
                 }
                 UpdateStats(sample);
                 PumpToasts();
+                if (!demo && awarded.Count > 0) SyncCloud();
             }
             catch (Exception ex)
             {
                 // Invalid samples/disconnections cannot carry an armed condition across a gap.
-                Disconnect("Lettura sospesa: " + ex.Message);
+                Disconnect("Sessione non disponibile: " + ex.Message);
+                autoReconnect = true;
+                SetAutomaticWaiting("In attesa della sessione Cemu supportata; ricollegamento automatico.");
             }
+        }
+        void SetAutomaticWaiting(string message)
+        {
+            current = null;
+            if (statusTitle != "Attesa automatica" || statusDetail != message)
+            {
+                toasts.Clear(); if (activeToast != null) { activeToast.Close(); activeToast = null; }
+                SetStatus("Attesa automatica", message, StatusKind.Busy); RefreshList();
+            }
+        }
+        void WatchConnection()
+        {
+            if (!autoReconnect || connecting || demo || memory != null || IsDisposed || Disposing) return;
+            try
+            {
+                var matches = Process.GetProcessesByName("Cemu").Where(p => SamePath(p, cemuPath.Text)).ToList();
+                if (matches.Count != 1) return;
+                var candidate = GameSession.FromLog(cemuPath.Text, matches[0].Id);
+                selectedGame.RequireProfile(candidate); // Never attach another game/version automatically.
+                Connect();
+            }
+            catch { } // Wait for the matching title/log; user can cancel with Scollega.
         }
         void PumpToasts()
         {
@@ -326,47 +364,49 @@ namespace WiiUAchievements
         {
             Invalidate(); Kick();
         }
-    }
-
-        void CloudLogin()
+        void CloudLogin() { AuthenticateCloud(false); }
+        void CloudSignUp() { AuthenticateCloud(true); }
+        async void AuthenticateCloud(bool signup)
         {
-            if (cloud == null) return;
+            if (cloudBusy) return;
+            string email = cloudEmail.Text.Trim(), password = cloudPassword.Text;
+            string key = cloudApiKey.Text.Trim(), project = cloudProject.Text.Trim();
+            cloudPassword.Clear();
+            if (String.IsNullOrWhiteSpace(email) || String.IsNullOrEmpty(password)) { cloudMessage = "Inserisci email e password."; Invalidate(); return; }
+            cloudBusy = true; cloudMessage = "Accesso in corso…"; PlaceFields(); Invalidate();
             try
             {
-                string email = cloudEmail.Text.Trim();
-                string pass = cloudPassword.Text;
-                if (String.IsNullOrWhiteSpace(email) || String.IsNullOrWhiteSpace(pass))
-                { Log("Inserisci email e password."); return; }
-                cloud.SignIn(email, pass);
-                Log("Accesso cloud effettuato: " + email);
-                cloudPassword.Text = "";
-                Invalidate();
+                await Task.Run(() => { cloud.Configure(key, project); if (signup) cloud.SignUp(email, password); else cloud.SignIn(email, password); });
+                if (IsDisposed || Disposing) return;
+                cloudMessage = "Account connesso. Sincronizzazione dei progressi in corso.";
+                nextCloudSync = DateTime.MinValue;
             }
-            catch (Exception ex) { Log("Accesso cloud non riuscito: " + ex.Message); }
+            catch (Exception) { if (!IsDisposed) cloudMessage = "Accesso non riuscito. Verifica configurazione, credenziali e connessione."; }
+            finally { password = null; cloudBusy = false; if (!IsDisposed) { PlaceFields(); Invalidate(); } }
+            if (!IsDisposed) SyncCloud();
         }
-
-        void CloudSignUp()
+        async void CloudLogout()
         {
-            if (cloud == null) return;
+            if (cloudBusy) return;
+            cloudBusy = true; cloudPassword.Clear(); PlaceFields();
+            try { await Task.Run(() => cloud.SignOut()); if (!IsDisposed) cloudMessage = "Account disconnesso; credenziali rimosse."; }
+            catch (Exception) { if (!IsDisposed) cloudMessage = "Account disconnesso; impossibile rimuovere alcuni file delle credenziali."; }
+            finally { cloudBusy = false; if (!IsDisposed) { PlaceFields(); Invalidate(); } }
+        }
+        async void SyncCloud()
+        {
+            if (cloudBusy || cloud == null || !cloud.IsSignedIn || demo || progress == null || DateTime.UtcNow < nextCloudSync) return;
+            var target = progress; var entries = target.Snapshot(); var allowed = rules.Where(a => !a.IsPlanned).Select(a => a.Id).ToArray();
+            cloudBusy = true; nextCloudSync = DateTime.UtcNow.AddSeconds(30);
             try
             {
-                string email = cloudEmail.Text.Trim();
-                string pass = cloudPassword.Text;
-                if (String.IsNullOrWhiteSpace(email) || String.IsNullOrWhiteSpace(pass))
-                { Log("Inserisci email e password per registrarti."); return; }
-                cloud.SignUp(email, pass);
-                Log("Account cloud creato e accesso effettuato: " + email);
-                cloudPassword.Text = "";
-                Invalidate();
+                var remote = await Task.Run(() => cloud.Synchronize(target.Identity, entries, allowed));
+                if (IsDisposed || Disposing || progress != target || demo) return;
+                if (target.Merge(remote, allowed)) { if (engine != null) engine.Reset(); RefreshList(); }
+                cloudMessage = "Progressi sincronizzati · " + DateTime.Now.ToString("HH:mm");
             }
-            catch (Exception ex) { Log("Registrazione cloud non riuscita: " + ex.Message); }
-        }
-        void CloudLogout()
-        {
-            if (cloud == null) return;
-            cloud.SignOut();
-            Log("Uscita dall'account cloud.");
-            Invalidate();
+            catch (Exception) { if (!IsDisposed) cloudMessage = "Cloud non disponibile: progressi locali conservati, nuovo tentativo automatico."; }
+            finally { cloudBusy = false; if (!IsDisposed) { PlaceFields(); Invalidate(); } }
         }
     }
 }

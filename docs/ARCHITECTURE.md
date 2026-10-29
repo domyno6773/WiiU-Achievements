@@ -1,16 +1,3 @@
-
-## Cloud sync (skeleton, 2026-10-29)
-
-**UI:** Settings sheet now contains an ACCOUNT CLOUD section (email, password, Registrati, Accedi, Esci) drawn with the existing custom widgets. Status text shows signed-in email or "Non connesso".
-
-
-`CloudSync` (`src/CloudSync.cs`) provides optional Firebase Authentication and Firestore REST access.
-- Local `ProgressStore` is still the source of truth while offline.
-- Configuration (API key, project id, refresh token) is stored in `data/cloud.xml` (never committed).
-- `Push` is called after a successful local award when the user is signed in.
-- Network errors are swallowed so gameplay is never blocked.
-- Full document merge (pull of existing unlocks) is intentionally left as the next incremental step.
-
 # Architecture and extension guide
 
 ## Runtime flow
@@ -122,7 +109,7 @@ For each locked rule it maintains an armed flag and a consecutive-match count:
 - A regression in observed permanent progression also resets the baseline.
   Continuity stores a defensive copy so caller mutation cannot hide a rollback.
   Rupees, current health and consumable soup contents are excluded from this
-  check. This does not identify every load or replace manual recording boundaries.
+  check. The independent gameplay gate handles observed scene/load boundaries; the regression check alone does not identify saves.
 - Already persisted IDs never award again in that profile.
 - Every award due in the same sample commits together via `AwardMany` before
   any award is returned to the UI. A write failure resets transient state and
@@ -136,8 +123,8 @@ For each locked rule it maintains an armed flag and a consecutive-match count:
 
 Manual pause stops the sampling timer, clears pending notifications and resets
 the engine. Resume resets it again and rechecks session identity before sampling.
-Earned progress remains. This is an explicit user-controlled recording boundary,
-not automatic gameplay/menu/load/save-slot detection.
+Earned progress remains. This optional user-controlled boundary is independent
+of the automatic gameplay gate described below.
 
 This is polling of persistent state, not event hooks or frame-perfect tracking.
 
@@ -147,17 +134,35 @@ sampling layer explicitly refreshes presentation when progression values change,
 including below-threshold counters whose engine phase remains the same.
 
 
-## Automatic load detection (added 2026-10-29)
+## Recording boundaries and optional cloud (2026-10-30)
 
-In `MainForm.Tick`, after a live sample is read, `sample.PermanentRegressionCount(current)` is evaluated.  
-This method (added to `GameSnapshot`) counts how many permanent progression fields dropped relative to the previous sample (HeroClothes + all `WindWakerProgression` fields except `grandma_and_soup`).
+The redundant multi-field reset in the form has been removed. `GameplayContext`
+reads live-checked stage/request/player signals before and after save bytes.
+`GameplayGate` blocks title/file-select/loading/unknown snapshots and requires
+750 ms of coherent context. Normal observed in-world scene requests can preserve
+arming (not confirmation streaks); menu/unknown/gaps cancel continuity. A new
+segment cannot award an already-satisfied save. Maximum-heart/permanent rollback
+remains a separate defensive reset. `MainForm` displays automatic waiting without
+stopping the sampling intent. A one-second watcher reopens only the same supported
+executable/profile after loss; explicit disconnect invalidates pending attach
+continuations. See [AUTOMATIC-LOADS.md](AUTOMATIC-LOADS.md).
 
-When the count is ≥ 3, the engine is reset (`engine.Reset()`) and a log entry is written.  
-This path reuses the same reset already used by manual Pause and by single-field `RegressesFrom`.  
-Already persisted unlocks are never cleared.  
-Manual Pause remains available for edge cases (very similar saves, menu transitions that do not drop enough permanent flags, etc.).
+`CloudSync` is used only by serialized `Task.Run` operations. A separate 30-second
+UI timer and new local awards schedule synchronization without waiting inside
+the sample loop. ProgressStore snapshots/merges stay on the UI thread. A returned
+result is applied only if the same store is still selected and the form is alive;
+demo never uploads or imports. Persisted imports reset transient engine state,
+do not play award notifications, and preserve earned timestamps. Unknown/planned
+IDs are rejected by the local merge. The local file is the durable upload queue;
+failures retry the complete local set, not only new awards.
 
-The detection is intentionally conservative and uses only already-decoded fields; no new memory offsets were introduced.
+Firestore stores immutable per-ID UTC timestamp documents under
+`users/{uid}/profiles/{SHA256(localProgressIdentity)}/unlocks/{id}`. Client create
+preconditions prevent overwriting another device. Pagination, bounded responses,
+JSON parsing, refresh/restart credentials and project-switch logout are handled.
+Credentials are encrypted with per-user Windows DPAPI without `.bak` copies.
+Backend Native REST compatibility, account provider and ownership rules must be
+configured and verified separately. See [CLOUD.md](CLOUD.md).
 
 ## Persistence contract
 
