@@ -1,10 +1,16 @@
 # Wii U Achievements — native console port (development)
 
-This directory belongs to the **wiiu-native** branch of the upstream WiiU-Achievements project. It is a port of the existing Windows application, **not an independent achievements product**.
+This directory belongs to the **`wiiu-native`** branch of the developer's fork,
+[domyno6773/WiiU-Achievements](https://github.com/domyno6773/WiiU-Achievements).
+The canonical upstream project is
+[hoffo1987/WiiU-Achievements](https://github.com/hoffo1987/WiiU-Achievements)
+(branch `main`). This is a port of the existing Windows application,
+**not an independent achievements product**.
 
 ## Non-negotiable boundaries
 
-- Do not commit to, merge into, force-push or modify upstream `main`.
+- Write Wii U-specific changes **only** to `domyno6773/WiiU-Achievements:wiiu-native`.
+- Never push to `hoffo1987/WiiU-Achievements` or to either repository's `main` from the port workflow.
 - Preserve original achievements, stable IDs, set revisions, categories, rarities, display text and progress semantics. Never silently award existing milestones.
 - Keep the original Windows `src/`, root XML and Windows scripts intact. Follow upstream changes deliberately and verify compatibility before importing them.
 - Read-only monitoring of title memory. No patches to game executable, save editing or modification of game state.
@@ -23,7 +29,10 @@ The read-only catalog frontend is implemented in native C and generated from
 the original four XML files. It currently renders technical text screens,
 not the final Windows-parity UI. It does **not** unlock achievements.
 
-No Wii U binary has yet been verified on physical hardware. This directory is the foundation for the port; **neither memory inspection nor in-game overlays have been validated on physical hardware**.
+The **first WUHB startup and catalog display have been confirmed on physical Wii U
+hardware** (2026-10-30, tester report). The GamePad controls and both individual
+outputs have not yet been independently checked. See [hardware test log](docs/HARDWARE-TESTS.md).
+**Neither the WUPS plugin, memory inspection nor in-game overlays have been validated on physical hardware.**
 
 ## Proposed source layout
 
@@ -46,4 +55,5 @@ Directories will be added as implementation begins. Avoid placeholder source fil
 
 Build and deployment instructions must be tested before they are marked as working.
 
-See [the port architecture](docs/ARCHITECTURE.md) and [compatibility contract](docs/COMPATIBILITY.md).
+See [the port architecture](docs/ARCHITECTURE.md), [compatibility contract](docs/COMPATIBILITY.md),
+[hardware test log](docs/HARDWARE-TESTS.md) and [upstream sync policy](docs/UPSTREAM-SYNC.md).
