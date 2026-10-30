@@ -24,9 +24,7 @@
 DECL_ASSET(shell_tv); DECL_ASSET(shell_drc);
 DECL_ASSET(card_tv); DECL_ASSET(card_tv_focus);
 DECL_ASSET(card_drc); DECL_ASSET(card_drc_focus);
-DECL_ASSET(medal_bronze_rupee); DECL_ASSET(medal_bronze_heart);
-DECL_ASSET(medal_silver_rupee); DECL_ASSET(medal_silver_heart);
-DECL_ASSET(medal_gold_rupee); DECL_ASSET(medal_gold_heart);
+DECL_ASSET(medal_bronze_rupee); DECL_ASSET(medal_bronze_rupee_blue); DECL_ASSET(medal_bronze_rupee_red); DECL_ASSET(medal_bronze_rupee_purple); DECL_ASSET(medal_bronze_rupee_gold); DECL_ASSET(medal_bronze_rupee_silver); DECL_ASSET(medal_bronze_heart); DECL_ASSET(medal_silver_rupee); DECL_ASSET(medal_silver_rupee_blue); DECL_ASSET(medal_silver_rupee_red); DECL_ASSET(medal_silver_rupee_purple); DECL_ASSET(medal_silver_rupee_gold); DECL_ASSET(medal_silver_rupee_silver); DECL_ASSET(medal_silver_heart); DECL_ASSET(medal_gold_rupee); DECL_ASSET(medal_gold_rupee_blue); DECL_ASSET(medal_gold_rupee_red); DECL_ASSET(medal_gold_rupee_purple); DECL_ASSET(medal_gold_rupee_gold); DECL_ASSET(medal_gold_rupee_silver); DECL_ASSET(medal_gold_heart);
 DECL_ASSET(nunito_regular); DECL_ASSET(nunito_bold); DECL_ASSET(nunito_extrabold);
 
 typedef enum { PAGE_CATALOG=0, PAGE_GAMES, PAGE_DETAILS, PAGE_INFO } Page;
@@ -35,7 +33,7 @@ typedef struct { Page page; Filter filter; unsigned category,chapter,selected; c
 typedef struct {
  SDL_Window *window;
  SDL_Renderer *renderer;
- SDL_Texture *shell,*card,*card_focus,*medals[3][2],*static_page,*previous;
+ SDL_Texture *shell,*card,*card_focus,*medals[3][7],*static_page,*previous;
  TTF_Font *regular,*bold,*heavy,*small,*subhead,*heading;
  int width,height,cols,rows,cardW,cardH;
  int start; /* top-left card index shown on this output */
@@ -166,7 +164,16 @@ static const AchievementEntry *visible_at(int nth){
 }
 static void medal(Display *d,const AchievementEntry *e,int x,int y,int size){
  int tier=!strcmp(e->rarity,"gold")?2:!strcmp(e->rarity,"silver")?1:0;
- int kind=!strcmp(e->field,"max_health")?1:0;
+ int kind=0;
+ if(!strcmp(e->field,"max_health"))kind=6; /* heart */
+ else if(!strcmp(e->field,"rupees")){
+   int rank=0;
+   for(unsigned i=0;i<g_catalog_count;++i)
+     if(g_catalog[i].executable&&!strcmp(g_catalog[i].field,"rupees")
+        &&g_catalog[i].threshold<e->threshold)++rank;
+   /* Source Art.For palette progression. */
+   kind=rank<6?rank:5;
+ }
  copy_tex(d,d->medals[tier][kind],x,y,size,size);
 }
 static void rounded_button(Display *d,const char *label,int x,int y,int w,SDL_Color fg,bool active){
@@ -452,11 +459,26 @@ static int load_display(Display *d,int index){
   asset_medal_##tier##_##kind##_start,asset_medal_##tier##_##kind##_end)
  /* literal arrays required for static symbols */
  d->medals[0][0]=load_texture(d,asset_medal_bronze_rupee_start,asset_medal_bronze_rupee_end);
- d->medals[0][1]=load_texture(d,asset_medal_bronze_heart_start,asset_medal_bronze_heart_end);
+ d->medals[0][1]=load_texture(d,asset_medal_bronze_rupee_blue_start,asset_medal_bronze_rupee_blue_end);
+ d->medals[0][2]=load_texture(d,asset_medal_bronze_rupee_red_start,asset_medal_bronze_rupee_red_end);
+ d->medals[0][3]=load_texture(d,asset_medal_bronze_rupee_purple_start,asset_medal_bronze_rupee_purple_end);
+ d->medals[0][4]=load_texture(d,asset_medal_bronze_rupee_gold_start,asset_medal_bronze_rupee_gold_end);
+ d->medals[0][5]=load_texture(d,asset_medal_bronze_rupee_silver_start,asset_medal_bronze_rupee_silver_end);
+ d->medals[0][6]=load_texture(d,asset_medal_bronze_heart_start,asset_medal_bronze_heart_end);
  d->medals[1][0]=load_texture(d,asset_medal_silver_rupee_start,asset_medal_silver_rupee_end);
- d->medals[1][1]=load_texture(d,asset_medal_silver_heart_start,asset_medal_silver_heart_end);
+ d->medals[1][1]=load_texture(d,asset_medal_silver_rupee_blue_start,asset_medal_silver_rupee_blue_end);
+ d->medals[1][2]=load_texture(d,asset_medal_silver_rupee_red_start,asset_medal_silver_rupee_red_end);
+ d->medals[1][3]=load_texture(d,asset_medal_silver_rupee_purple_start,asset_medal_silver_rupee_purple_end);
+ d->medals[1][4]=load_texture(d,asset_medal_silver_rupee_gold_start,asset_medal_silver_rupee_gold_end);
+ d->medals[1][5]=load_texture(d,asset_medal_silver_rupee_silver_start,asset_medal_silver_rupee_silver_end);
+ d->medals[1][6]=load_texture(d,asset_medal_silver_heart_start,asset_medal_silver_heart_end);
  d->medals[2][0]=load_texture(d,asset_medal_gold_rupee_start,asset_medal_gold_rupee_end);
- d->medals[2][1]=load_texture(d,asset_medal_gold_heart_start,asset_medal_gold_heart_end);
+ d->medals[2][1]=load_texture(d,asset_medal_gold_rupee_blue_start,asset_medal_gold_rupee_blue_end);
+ d->medals[2][2]=load_texture(d,asset_medal_gold_rupee_red_start,asset_medal_gold_rupee_red_end);
+ d->medals[2][3]=load_texture(d,asset_medal_gold_rupee_purple_start,asset_medal_gold_rupee_purple_end);
+ d->medals[2][4]=load_texture(d,asset_medal_gold_rupee_gold_start,asset_medal_gold_rupee_gold_end);
+ d->medals[2][5]=load_texture(d,asset_medal_gold_rupee_silver_start,asset_medal_gold_rupee_silver_end);
+ d->medals[2][6]=load_texture(d,asset_medal_gold_heart_start,asset_medal_gold_heart_end);
  d->regular=load_font(asset_nunito_regular_start,asset_nunito_regular_end,tv?16:13);
  d->small=load_font(asset_nunito_regular_start,asset_nunito_regular_end,tv?13:11);
  d->bold=load_font(asset_nunito_bold_start,asset_nunito_bold_end,tv?18:14);
@@ -480,7 +502,7 @@ static void stop_display(Display *d){
  if(d->heavy)TTF_CloseFont(d->heavy);
  if(d->subhead)TTF_CloseFont(d->subhead);
  if(d->heading)TTF_CloseFont(d->heading);
- for(int tier=0;tier<3;tier++)for(int k=0;k<2;k++)if(d->medals[tier][k])SDL_DestroyTexture(d->medals[tier][k]);
+ for(int tier=0;tier<3;tier++)for(int k=0;k<7;k++)if(d->medals[tier][k])SDL_DestroyTexture(d->medals[tier][k]);
  if(d->shell)SDL_DestroyTexture(d->shell);
  if(d->card)SDL_DestroyTexture(d->card);
  if(d->card_focus)SDL_DestroyTexture(d->card_focus);
