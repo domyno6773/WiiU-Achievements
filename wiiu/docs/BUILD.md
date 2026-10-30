@@ -1,8 +1,24 @@
 # Build and first hardware smoke test
 
-The first version is an **explicit non-functional bootstrap**: only an app shell
-and an inert companion plugin. No achievement unlock, save reading, overlay,
+The current first milestone is a **read-only, canonical-XML-backed catalog viewer**
+and an inert companion plugin. It displays the full source catalog with status,
+rarity, points, descriptions and GamePad filters, but not the original visual
+design. No achievement unlock, save reading, overlay,
 cloud sync, or installed-game discovery is implemented yet.
+
+## Catalog parity tests (can run on any PC)
+
+From repository root, with Python 3.10 or later:
+
+```sh
+python3 -m unittest discover -s wiiu/tests -p 'test_*.py' -v
+python3 wiiu/tools/generate_catalog.py --root . --out /tmp/catalog_generated.c
+```
+
+The generated C data is compiled into the WUHB at build time and represents
+the **110 original achievements** (70 executable definitions, including
+53 experimental detectors, plus 40 planned). No new achievement IDs are
+introduced or maintained separately. The catalog does not grant any awards.
 
 ## Requirements
 
@@ -62,8 +78,9 @@ the upstream owner's build minutes. This is a local, explicitly invoked build.
 
 1. Copy only the app's `.wuhb` to
    `sd:/wiiu/apps/WiiUAchievementsNative.wuhb`.
-2. Launch it from the Wii U Menu; press A to open Wind Waker's **placeholder**
-   screen, X for information, B to return and B again to exit.
+2. Launch it from the Wii U Menu; press A for the actual XML-backed catalog, Up/Down to select an
+   achievement, A for details, X to cycle status filters, Y to cycle
+   categories, and B to navigate back. X on the main screen opens info.
 3. Confirm text, TV/GamePad output, controls, return to menu and process exit.
 4. Do **not** install the `.wps` yet. Its lifecycle must first be compiled,
    reviewed, tested and enabled in a deliberate separate stage.
@@ -79,5 +96,7 @@ Console firmware, Aroma version, app launch success, GamePad button checks,
 TV/GamePad visibility, HOME behavior, exit behavior, and any crash or error.
 Do not upload console keys, ROMs, save files, personal logs or memory dumps.
 
-The real next step is a shared manifest generated from the upstream achievement
-XML and deterministic engine parity tests — not game-memory patching.
+The XML-backed catalog generator and validation tests are now implemented.
+The next milestone is the native rule-engine parity harness and UI rendering
+parity, followed by a safe plugin/notification smoke test — not game-memory
+patching before hardware validation.
