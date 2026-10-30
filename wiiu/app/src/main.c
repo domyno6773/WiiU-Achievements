@@ -1,20 +1,20 @@
 /*
- * Wii U Achievements — native frontend bootstrap.
+ * Wii U Achievements — native Aroma frontend bootstrap.
  *
- * This intentionally simple navigation shell establishes a real WUHB entry
- * point, proper Wii U lifecycle and GamePad input. It does NOT pretend to be
- * the final ported WinForms UI, a live game monitor or an achievement reader.
- *
- * The Windows source and root XML remain canonical. See wiiu/docs/COMPATIBILITY.md.
+ * First milestone: Wii U app lifecycle, TV/GamePad rendering, input/navigation.
+ * NOT the final WinForms visual port and NOT a functioning achievement monitor.
+ * Original source/XML in this repository remain the canonical implementation.
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <malloc.h>
 
+#include <coreinit/cache.h>
+#include <coreinit/screen.h>
 #include <coreinit/thread.h>
 #include <coreinit/time.h>
 #include <vpad/input.h>
-#include <whb/log.h>
-#include <whb/log_console.h>
 #include <whb/proc.h>
 
 typedef enum {
@@ -23,51 +23,58 @@ typedef enum {
     PAGE_INFO
 } Page;
 
-static void draw_page(Page page)
+static void put_line(OSScreenID screen, uint32_t row, const char *text)
 {
-    /* WHBLogConsoleClear is the wut logging-console reset function. */
-    WHBLogConsoleClear();
+    OSScreenPutFontEx(screen, 2, row, text);
+}
 
-    WHBLogPrintf("========================================");
-    WHBLogPrintf("           Wii U Achievements");
-    WHBLogPrintf("========================================");
-    WHBLogPrintf(" Port nativo del progetto WiiU-Achievements");
-    WHBLogPrintf(" Branch: wiiu-native");
-    WHBLogPrintf("");
+static void render_page(OSScreenID screen, Page page)
+{
+    OSScreenClearBufferEx(screen, 0x102A4600);
+
+    put_line(screen, 2,  "======================================");
+    put_line(screen, 3,  "          Wii U Achievements");
+    put_line(screen, 4,  "======================================");
+    put_line(screen, 6,  "Port nativo del progetto originale");
+    put_line(screen, 7,  "Branch: wiiu-native");
 
     switch (page) {
     case PAGE_HOME:
-        WHBLogPrintf("CATALOGO GIOCHI");
-        WHBLogPrintf("");
-        WHBLogPrintf(" > The Legend of Zelda: The Wind Waker HD");
-        WHBLogPrintf("   Primo gioco previsto (non ancora collegato)");
-        WHBLogPrintf("");
-        WHBLogPrintf(" A: apri scheda     X: informazioni");
-        WHBLogPrintf(" B: esci");
+        put_line(screen, 10, "CATALOGO GIOCHI");
+        put_line(screen, 12, "> The Legend of Zelda: Wind Waker HD");
+        put_line(screen, 13, "  Primo gioco previsto - non collegato");
+        put_line(screen, 18, "A: Apri scheda  X: Informazioni");
+        put_line(screen, 19, "B: Esci");
         break;
     case PAGE_WIND_WAKER:
-        WHBLogPrintf("THE LEGEND OF ZELDA: THE WIND WAKER HD");
-        WHBLogPrintf("");
-        WHBLogPrintf(" La lista e le regole arriveranno dai file");
-        WHBLogPrintf(" canonici del progetto Windows.");
-        WHBLogPrintf("");
-        WHBLogPrintf(" Stato: prototipo frontend, nessun");
-        WHBLogPrintf(" achievement monitorato o sbloccabile.");
-        WHBLogPrintf("");
-        WHBLogPrintf(" B: torna al catalogo");
+        put_line(screen, 10, "THE LEGEND OF ZELDA: WIND WAKER HD");
+        put_line(screen, 12, "Catalogo e regole saranno importati");
+        put_line(screen, 13, "dal progetto Windows originale.");
+        put_line(screen, 15, "Prototipo: nessun obiettivo attivo");
+        put_line(screen, 18, "B: Torna al catalogo");
         break;
     case PAGE_INFO:
-        WHBLogPrintf("INFORMAZIONI");
-        WHBLogPrintf("");
-        WHBLogPrintf(" App nativa wut / Aroma.");
-        WHBLogPrintf(" Interfaccia definitiva e core in porting.");
-        WHBLogPrintf(" Nessuna lettura o scrittura in memoria");
-        WHBLogPrintf(" dei giochi.");
-        WHBLogPrintf("");
-        WHBLogPrintf(" B: torna al catalogo");
+        put_line(screen, 10, "INFORMAZIONI");
+        put_line(screen, 12, "App nativa wut / Aroma.");
+        put_line(screen, 13, "Interfaccia originale ancora in porting.");
+        put_line(screen, 15, "Nessuna lettura della memoria dei giochi.");
+        put_line(screen, 18, "B: Torna al catalogo");
         break;
     }
-    WHBLogConsoleDraw();
+}
+
+static void redraw(Page page, void *tv, uint32_t tv_size,
+                   void *drc, uint32_t drc_size)
+{
+    /* Both frames of each double buffer must show the newly selected page. */
+    for (unsigned frame = 0; frame < 2; ++frame) {
+        render_page(SCREEN_TV, page);
+        render_page(SCREEN_DRC, page);
+        DCFlushRange(tv, tv_size);
+        DCFlushRange(drc, drc_size);
+        OSScreenFlipBuffersEx(SCREEN_TV);
+        OSScreenFlipBuffersEx(SCREEN_DRC);
+    }
 }
 
 int main(int argc, char **argv)
@@ -76,42 +83,61 @@ int main(int argc, char **argv)
     (void)argv;
 
     WHBProcInit();
-    WHBLogConsoleInit();
+    OSScreenInit();
+
+    const uint32_t tv_size = OSScreenGetBufferSizeEx(SCREEN_TV);
+    const uint32_t drc_size = OSScreenGetBufferSizeEx(SCREEN_DRC);
+    void *tv = memalign(0x100, tv_size);
+    void *drc = memalign(0x100, drc_size);
+
+    if (tv == NULL || drc == NULL) {
+        free(drc);
+        free(tv);
+        OSScreenShutdown();
+        WHBProcShutdown();
+        return 1;
+    }
+
+    OSScreenSetBufferEx(SCREEN_TV, tv);
+    OSScreenSetBufferEx(SCREEN_DRC, drc);
+    OSScreenEnableEx(SCREEN_TV, true);
+    OSScreenEnableEx(SCREEN_DRC, true);
 
     Page page = PAGE_HOME;
-    bool needs_redraw = true;
     bool quit_requested = false;
+    redraw(page, tv, tv_size, drc, drc_size);
 
     while (WHBProcIsRunning() && !quit_requested) {
         VPADStatus status = {0};
-        VPADRead(VPAD_CHAN_0, &status, 1, NULL);
+        VPADReadError error;
+        VPADRead(VPAD_CHAN_0, &status, 1, &error);
 
-        if (status.trigger & VPAD_BUTTON_B) {
-            if (page == PAGE_HOME) {
-                quit_requested = true;
-            } else {
-                page = PAGE_HOME;
-                needs_redraw = true;
+        if (error == VPAD_READ_SUCCESS) {
+            const Page previous = page;
+            if (status.trigger & VPAD_BUTTON_B) {
+                if (page == PAGE_HOME) {
+                    quit_requested = true;
+                } else {
+                    page = PAGE_HOME;
+                }
+            } else if (page == PAGE_HOME && (status.trigger & VPAD_BUTTON_A)) {
+                page = PAGE_WIND_WAKER;
+            } else if (page == PAGE_HOME && (status.trigger & VPAD_BUTTON_X)) {
+                page = PAGE_INFO;
             }
-        } else if (page == PAGE_HOME && (status.trigger & VPAD_BUTTON_A)) {
-            page = PAGE_WIND_WAKER;
-            needs_redraw = true;
-        } else if (page == PAGE_HOME && (status.trigger & VPAD_BUTTON_X)) {
-            page = PAGE_INFO;
-            needs_redraw = true;
-        }
 
-        if (needs_redraw) {
-            draw_page(page);
-            needs_redraw = false;
-        } else {
-            /* The WHB console is double-buffered: keep presenting it. */
-            WHBLogConsoleDraw();
+            if (page != previous) {
+                redraw(page, tv, tv_size, drc, drc_size);
+            }
         }
         OSSleepTicks(OSMillisecondsToTicks(33));
     }
 
-    WHBLogConsoleFree();
+    OSScreenEnableEx(SCREEN_TV, false);
+    OSScreenEnableEx(SCREEN_DRC, false);
+    OSScreenShutdown();
+    free(drc);
+    free(tv);
     WHBProcShutdown();
     return 0;
 }
