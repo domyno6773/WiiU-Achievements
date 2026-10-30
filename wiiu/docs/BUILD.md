@@ -49,10 +49,11 @@ Expected *if the toolchain matches the checked upstream examples*:
 `wiiu/app/build/WiiUAchievementsNative.wuhb` and
 `wiiu/plugin/WiiUAchievements.wps`.
 
-The native devkitPro toolchain is **not present in the authoring environment**
-at this first commit. The instructions and sources follow upstream examples,
-but are **not yet reported as compiled or hardware-tested**. Do not treat these
-paths as existing artifacts until an actual build succeeds.
+The native devkitPro toolchain is not installed in the chat authoring container,
+but GitHub Actions **successfully compiled** both formats on 2026-10-30.
+The WUHB subsequently **opened on a real Wii U and displayed the catalog** as
+reported by the tester. Plugin lifecycle, button navigation and separate screen
+output still require real hardware testing. See [HARDWARE-TESTS.md](HARDWARE-TESTS.md).
 
 ## Build via Docker (Linux, Windows with Docker Desktop, macOS)
 
