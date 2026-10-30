@@ -20,7 +20,10 @@ add_custom_command(
     COMMENT "Validate XML and generate Wii U achievement catalog"
     VERBATIM
 )
-add_executable(WiiUAchievementsNative src/main.c src/ui_canvas.c "${PORT_CATALOG}")
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/font_nunito_generated.c")
+    message(FATAL_ERROR "Nunito glyph atlas missing. Run: python3 wiiu/tools/generate_font.py --root . --output wiiu/app/src/font_nunito_generated.c (requires Pillow)")
+endif()
+add_executable(WiiUAchievementsNative src/main.c src/ui_canvas.c src/font_nunito_generated.c "${PORT_CATALOG}")
 target_include_directories(WiiUAchievementsNative PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_compile_features(WiiUAchievementsNative PRIVATE c_std_11)
 target_compile_options(WiiUAchievementsNative PRIVATE -Wall -Wextra)
