@@ -38,6 +38,26 @@ at this first commit. The instructions and sources follow upstream examples,
 but are **not yet reported as compiled or hardware-tested**. Do not treat these
 paths as existing artifacts until an actual build succeeds.
 
+## Build via Docker (Linux, Windows with Docker Desktop, macOS)
+
+The repository provides a pinned `wiiu/Dockerfile` with devkitPro/wut
+and WUPS. These commands run **on the development computer**, not the Wii U:
+
+```sh
+# Run from the repository root, with Docker running:
+docker build -f wiiu/Dockerfile -t wiiu-achievements-builder .
+docker run --rm -v "${PWD}:/project" -w /project \
+  wiiu-achievements-builder bash wiiu/build-native.sh
+```
+
+PowerShell users can run the same commands (the `-v` mount value may need
+`${PWD}.Path` instead of `${PWD}` depending on the Docker/PowerShell version).
+For a devkitPro MSYS2 installation on Windows, the official wut sample
+build instructions can be adapted; using Docker avoids a local toolchain.
+
+The Dockerfile itself does not automatically run GitHub Actions or consume
+the upstream owner's build minutes. This is a local, explicitly invoked build.
+
 ## Safe first test on Aroma
 
 1. Copy only the app's `.wuhb` to
