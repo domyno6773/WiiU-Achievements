@@ -42,6 +42,17 @@ jobs:
           mkdir -p wiiu/app/build/gpu-assets
           python3 wiiu/tools/generate_gpu_assets.py --root . --out wiiu/app/build/gpu-assets
           test -s wiiu/app/build/gpu-assets/visual_assets.S
+      - name: Compare GPU scene against original Windows UI
+        run: |
+          python3 wiiu/tools/preview_gpu_ui.py --root . \
+            --assets wiiu/app/build/gpu-assets \
+            --out /tmp/wiiu-gpu-preview
+      - name: Upload high-fidelity visual previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiiUAchievements-GX2-Visual-Previews
+          path: /tmp/wiiu-gpu-preview/*.png
+          if-no-files-found: error
       - name: Create isolated Wii U toolchain image
         run: docker build --file wiiu/Dockerfile --tag wiiu-achievements-builder .
       - name: Build WUHB and inert WUPS plugin
