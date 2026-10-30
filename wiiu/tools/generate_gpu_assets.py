@@ -152,13 +152,43 @@ def shell(w,h,name,dest):
     # banner, same proportions as original screenshot
     banner=(21,78,w-42,188) if tv else (15,53,w-30,121)
     ocean(im,banner)
+    # Original Windows banner: pale circular objective dial, inset status pills.
+    bx,by,bw,bh=banner
+    rr=77 if tv else 49
+    rx=bx+bw-(110 if tv else 79)
+    ry=by+bh//2
+    shadow(im,(rx-rr,ry-rr,rx+rr,ry+rr),rr,blur=6,opacity=48,offset=5)
+    d=ImageDraw.Draw(im)
+    ellipse(d,(rx-rr-2,ry-rr-2,rx+rr+2,ry+rr+2),"#E3ECF2")
+    ellipse(d,(rx-rr+4,ry-rr+4,rx+rr-4,ry+rr-4),"#FFFFFF")
+    ellipse(d,(rx-rr+14,ry-rr+14,rx+rr-14,ry+rr-14),
+            "#E3ECF2",outline="#C6D5DF",width=2)
+    ellipse(d,(rx-rr+25,ry-rr+25,rx+rr-25,ry+rr-25),"#F9FBFC")
+    # These arcs represent decorative shine, not fabricated achievement progress.
+    d.arc(sc((rx-rr+7,ry-rr+7,rx+rr-7,ry+rr-7)),
+          start=218,end=281,fill="#C8EAF7",width=(5 if tv else 3)*SCALE)
+    # Re-create the original inset white information pills.
+    py=by+bh-(46 if tv else 34)
+    p_h=30 if tv else 23
+    specs=[(bx+(22 if tv else 11),196 if tv else 170),
+           (bx+(224 if tv else 184),187 if tv else 161)]
+    for px,pw in specs:
+        shadow(im,(px,py,px+pw,py+p_h),p_h//2,blur=3,opacity=27,offset=2)
+        rect(d,(px,py,px+pw,py+p_h),"#F4F8FB",p_h//2,outline="#DAE5EC")
+    # Open badge in system header uses no Cemu/Windows terminology.
+    sx=954 if tv else 630
+    sw=172 if tv else 128
+    sy=13 if tv else 8
+    rect(d,(sx,sy,sx+sw,sy+(34 if tv else 27)),"#FFF8EF",17,
+         outline="#DBE3E8")
+    # Make room for the fourth status tab in one segmented strip.
     # bottom status row panel
     foot=h-(51 if tv else 40)
     gradient(im,(0,foot,w,h),"#F5F8FA","#E2E9EF")
     rect(d,(0,foot,w,foot+1),"#C6D4DE")
     # filter tab container under ocean
     fy=(283 if tv else 180)
-    rect(d,(22 if tv else 15,fy,507 if tv else 411,fy+(38 if tv else 29)),
+    rect(d,(22 if tv else 15,fy,713 if tv else 533,fy+(38 if tv else 29)),
          "#E3EAF0",19,outline="#C8D4DE")
     # decorative small star in the brand header
     save(im,dest,name)
