@@ -1,6 +1,9 @@
 # Native Wii U port — engineering plan
 
-Status: **planning and repository foundation only**. Target: Aroma Wii U, with no dependence on Cemu at runtime.
+Status: **native catalog prototype compiled and launched on a real Wii U**;
+the achievements evaluator, WUPS monitoring and overlays are not yet ported or
+hardware-tested. Target: Aroma Wii U, with no dependence on Cemu at runtime.
+See [hardware test log](HARDWARE-TESTS.md).
 
 ## One project, two builds
 
