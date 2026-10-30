@@ -26,12 +26,18 @@ The canonical upstream project is
 - A shared portable achievements core and shared serialized rule identifiers, not two unrelated achievement engines.
 
 The read-only catalog frontend is implemented in native C and generated from
-the original four XML files. The native catalog now has the first visual styling pass: light Wii U palette,
-code-drawn sea banner, rarity medals, cyan focus outlines, game cards and two-column
-achievement cards with GamePad filtering. This is **not yet a pixel-identical
-port** of the original WinForms renderer: typography still uses a temporary
-public-domain 8x8 bitmap font, transitions and the fully animated ocean are
-pending. It does **not** unlock achievements.
+the original four XML files. The native catalog now renders the original light Wii U palette, code-drawn
+ocean banner, rarity medals, cyan cursor, white cards, and Nunito typography
+rasterized from the original SIL OFL fonts. It uses **3 columns at 1280x720 on
+TV** and **2 columns at 854x480 on GamePad**, with selectable achievement
+details, filters and chronological chapters. A reproducible host-rendered
+screenshot suite runs with the native C renderer.
+
+This is a significant visual port, **not yet pixel-identical** to the original
+WinForms UI: the animated ocean, complete medal icons/animation, progress
+engine, and full interaction parity are unfinished. It **cannot unlock**
+achievements or read your installed games/saves. The updated build still
+requires hardware performance and layout testing.
 
 The **first WUHB startup and catalog display have been confirmed on physical Wii U
 hardware** (2026-10-30, tester report). The GamePad controls and both individual
@@ -53,7 +59,7 @@ Directories will be added as implementation begins. Avoid placeholder source fil
 
 1. Obtain a reproducible wut + WUPS toolchain and compile a minimal `.wuhb` and `.wps` independently.
 2. Generate and validate the full catalog from upstream XML (implemented), then build golden behavioral parity fixtures against `Core.cs`.
-3. First native visual styling pass from `docs/UI.md` (implemented; Nunito and animation parity pending).
+3. Native light-theme visual pass with original Nunito (implemented; animated banner and perfect parity pending).
 4. Validate notification functionality with a **manual test toast only** before attaching to a game.
 5. Research game lifecycle, title identity and safe memory reads on a real Wii U; only then add the first live Wind Waker milestone.
 
