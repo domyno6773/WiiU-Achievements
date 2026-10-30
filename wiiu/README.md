@@ -19,7 +19,11 @@ This directory belongs to the **wiiu-native** branch of the upstream WiiU-Achiev
 - Development: devkitPro/devkitPPC, wut and Wii U Plugin System; evaluate libnotifications/NotificationModule for toast delivery.
 - A shared portable achievements core and shared serialized rule identifiers, not two unrelated achievement engines.
 
-No Wii U binary is shipped yet. This directory is the foundation for the port; **neither memory inspection nor in-game overlays have been validated on physical hardware**.
+The read-only catalog frontend is implemented in native C and generated from
+the original four XML files. It currently renders technical text screens,
+not the final Windows-parity UI. It does **not** unlock achievements.
+
+No Wii U binary has yet been verified on physical hardware. This directory is the foundation for the port; **neither memory inspection nor in-game overlays have been validated on physical hardware**.
 
 ## Proposed source layout
 
@@ -35,7 +39,7 @@ Directories will be added as implementation begins. Avoid placeholder source fil
 ## First deliverables
 
 1. Obtain a reproducible wut + WUPS toolchain and compile a minimal `.wuhb` and `.wps` independently.
-2. Create a golden behavior test suite by extracting representative upstream `Core.cs` cases.
+2. Generate and validate the full catalog from upstream XML (implemented), then build golden behavioral parity fixtures against `Core.cs`.
 3. Render the frontend with pixel/behavior references from `docs/UI.md`.
 4. Validate notification functionality with a **manual test toast only** before attaching to a game.
 5. Research game lifecycle, title identity and safe memory reads on a real Wii U; only then add the first live Wind Waker milestone.
