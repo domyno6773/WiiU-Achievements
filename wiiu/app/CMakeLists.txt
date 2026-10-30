@@ -20,7 +20,7 @@ add_custom_command(
     COMMENT "Validate XML and generate Wii U achievement catalog"
     VERBATIM
 )
-add_executable(WiiUAchievementsNative src/main.c "${PORT_CATALOG}")
+add_executable(WiiUAchievementsNative src/main.c src/ui_canvas.c "${PORT_CATALOG}")
 target_include_directories(WiiUAchievementsNative PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_compile_features(WiiUAchievementsNative PRIVATE c_std_11)
 target_compile_options(WiiUAchievementsNative PRIVATE -Wall -Wextra)
