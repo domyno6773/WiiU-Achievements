@@ -288,12 +288,37 @@ def medal(tier,kind,dest,name):
     d.arc(sc((75,12,85,22)),180,360,fill="#FFFFFF",width=2*SCALE)
     save(im,dest,name)
 
+def build_icon(dest):
+    """Self-authored Wii U Menu icon matching the ocean and trophy style."""
+    sz=256
+    icon=Image.new("RGBA",(sz*SCALE,sz*SCALE),"#56BCEB")
+    gradient(icon,(0,0,sz,sz),"#4FBAEF","#0572B8")
+    d=ImageDraw.Draw(icon)
+    for j in range(5):
+        points=[]
+        for x in range(0,sz,3):
+            y=151+j*19+5*math.sin(x/17+j*.8)
+            points.append((x,y))
+        line(d,points,"#B6E6FC" if j%2 else "#65C9F2",2)
+    ellipse(d,(72,32,186,146),"#F9FBFE")
+    ellipse(d,(80,40,178,138),"#D6F1FC")
+    ellipse(d,(88,48,170,130),"#FFFFFF")
+    polygon(d,[(102,54),(156,54),(147,99),(135,114),
+               (135,123),(153,123),(153,133),(103,133),(103,123),
+               (121,123),(121,114),(111,99)],"#E7B33C")
+    polygon(d,[(107,58),(151,58),(142,96),(129,106),(116,96)],"#FFE08B")
+    d.arc(sc((88,61,114,103)),90,255,fill="#D79A29",width=5*SCALE)
+    d.arc(sc((144,61,170,103)),285,90,fill="#D79A29",width=5*SCALE)
+    icon=icon.resize((128,128),Image.Resampling.LANCZOS)
+    icon.save(dest/"icon.png",optimize=True)
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--root",type=Path,required=True)
     a=p.parse_args()
     dest=a.out
+    build_icon(dest)
     shell(1280,720,"shell_tv",dest)
     shell(854,480,"shell_drc",dest)
     for screen,w,h in (("tv",392,98),("drc",398,91)):
