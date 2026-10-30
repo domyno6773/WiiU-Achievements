@@ -145,10 +145,27 @@ def shell(w,h,name,dest):
                "#32B7E9")
     ellipse(d,(avx-7,avy-10,avx+7,avy+4),"#FFFFFF")
     ellipse(d,(avx-13,avy+5,avx+13,avy+16 if tv else avy+12),"#FFFFFF")
-    # top icon circles
+    # Original system-menu-like icons, drawn without proprietary assets.
     side=w-(58 if tv else 39)
     for cx in (side,side-(56 if tv else 42)):
         ellipse(d,(cx-17,head/2-17,cx+17,head/2+17),"#F9FBFD",outline="#D4E0E8")
+    gear=side-(56 if tv else 42)
+    ellipse(d,(gear-7,head/2-7,gear+7,head/2+7),"#8998A3")
+    ellipse(d,(gear-3,head/2-3,gear+3,head/2+3),"#F9FBFD")
+    for j in range(8):
+        a=j*math.pi/4
+        line(d,[(gear+9*math.cos(a),head/2+9*math.sin(a)),
+                (gear+12*math.cos(a),head/2+12*math.sin(a))],"#8998A3",2)
+    for dy in (-6,0,6):
+        ellipse(d,(side-8,head/2+dy-1,side-6,head/2+dy+1),"#8D9BA5")
+        line(d,[(side-3,head/2+dy),(side+9,head/2+dy)],"#8D9BA5",2)
+    tx=454 if tv else 264; ty=head/2
+    polygon(d,[(tx-10,ty-10),(tx+10,ty-10),(tx+7,ty+3),
+               (tx+2,ty+7),(tx+2,ty+11),(tx+8,ty+11),
+               (tx+8,ty+14),(tx-8,ty+14),(tx-8,ty+11),
+               (tx-2,ty+11),(tx-2,ty+7),(tx-7,ty+3)],"#E6AC35")
+    d.arc(sc((tx-16,ty-10,tx-2,ty+8)),90,250,fill="#DDA12A",width=2*SCALE)
+    d.arc(sc((tx+2,ty-10,tx+16,ty+8)),290,90,fill="#DDA12A",width=2*SCALE)
     # banner, same proportions as original screenshot
     banner=(21,78,w-42,188) if tv else (15,53,w-30,121)
     ocean(im,banner)
@@ -182,15 +199,30 @@ def shell(w,h,name,dest):
     rect(d,(sx,sy,sx+sw,sy+(34 if tv else 27)),"#FFF8EF",17,
          outline="#DBE3E8")
     # Make room for the fourth status tab in one segmented strip.
-    # bottom status row panel
+    # GamePad button bar: beveled white, pill-sized Wii U controls.
     foot=h-(51 if tv else 40)
     gradient(im,(0,foot,w,h),"#F5F8FA","#E2E9EF")
     rect(d,(0,foot,w,foot+1),"#C6D4DE")
+    buttons=([(20,170),(202,149),(364,143),(519,191)] if tv
+             else [(16,137),(160,126),(294,131),(432,155)])
+    for i,(px,pw) in enumerate(buttons):
+        py=foot+(6 if tv else 5);bh=37 if tv else 30
+        shadow(im,(px,py,px+pw,py+bh),bh//2,blur=2,opacity=38,offset=2)
+        rect(d,(px,py,px+pw,py+bh),"#FFFFFF" if i else "#D2EEF9",bh//2,
+             outline="#C5D3DC")
+        ellipse(d,(px+8,py+7,px+(30 if tv else 25),py+(30 if tv else 24)),
+               "#FFFFFF" if not i else "#EEF3F7")
     # filter tab container under ocean
     fy=(283 if tv else 180)
     rect(d,(22 if tv else 15,fy,713 if tv else 533,fy+(38 if tv else 29)),
          "#E3EAF0",19,outline="#C8D4DE")
-    # decorative small star in the brand header
+    # Elevated white segmented selector matches the source status bar.
+    if tv:
+        shadow(im,(23,285,153,317),16,blur=2,opacity=22,offset=1)
+        rect(d,(24,285,151,317),"#FFFFFF",16,outline="#CDD8E1")
+    else:
+        shadow(im,(15,181,104,209),14,blur=2,opacity=20,offset=1)
+        rect(d,(16,182,103,208),"#FFFFFF",13,outline="#CDD8E1")
     save(im,dest,name)
 
 def card_template(w,h,selected,dest,name):
