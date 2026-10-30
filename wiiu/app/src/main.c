@@ -31,7 +31,7 @@ static const char *const cats[] = {
 };
 #define CAT_COUNT (sizeof(cats)/sizeof(cats[0]))
 
-static unsigned page = PAGE_GAMES, filter = FILTER_ALL;
+static unsigned page = PAGE_ACHIEVEMENTS, filter = FILTER_ALL;
 static unsigned category = 0, chapter = 0, selected = 0;
 static const AchievementEntry *detail = NULL;
 
@@ -129,11 +129,16 @@ static void banner(UiCanvas *c,int compact){
     ui_ocean_banner(c,x,y,w,h);
     int bx=x+(tv?30:20),ty=y+(tv?21:13);
     text(c,bx,ty,"The Wind Waker HD",font_title(c),UI_WHITE,0x63C5F200u,w-(tv?285:155));
-    text(c,bx,ty+(tv?43:31),"EUR v0  ·  Wii U nativa",font_small(c),
+    text(c,bx,ty+(tv?37:27),"EUR v0  ·  Wii U nativa",font_small(c),
          UI_WHITE,0x63C5F200u,300);
-    ui_circle(c,bx+5,ty+(tv?79:56),tv?7:5,UI_WARNING);
-    text(c,bx+(tv?20:14),ty+(tv?68:47),"Monitoraggio non ancora disponibile",
-         font_small(c),UI_WHITE,0x63C5F200u,w-(tv?320:185));
+    int status_y=y+h*56/100-(tv?7:6);
+    int status_w=tv?339:256,status_h=tv?28:21;
+    uint32_t status_bg=0x10658F00u;
+    ui_round(c,bx,status_y,status_w,status_h,12,status_bg);
+    ui_circle(c,bx+(tv?12:10),status_y+status_h/2,tv?5:4,UI_WARNING);
+    text(c,bx+(tv?23:19),status_y+(tv?4:3),
+         "Monitoraggio non disponibile",font_small(c),
+         UI_WHITE,status_bg,status_w-27);
 
     int ringr=tv?74:46,ringx=x+w-(tv?115:76),ringy=y+h/2-(tv?2:0);
     ui_circle(c,ringx,ringy+4,ringr+5,0x2379A700u);
@@ -178,7 +183,7 @@ static void game_card(UiCanvas *c){
     footer(c,"Apri il catalogo   ·   X informazioni   ·   B esci");
 }
 static void filters(UiCanvas *c){
-    int y=is_tv(c)?275:186,x=is_tv(c)?22:17;
+    int y=is_tv(c)?248:186,x=is_tv(c)?22:17;
     unsigned all=filtered_count();
     (void)all;
     pill(c,x,y,is_tv(c)?127:92,is_tv(c)?35:29,"Tutti",filter==FILTER_ALL,UI_WHITE);
@@ -193,7 +198,7 @@ static void filters(UiCanvas *c){
         char compact[24];snprintf(compact,sizeof compact,"%u / %u",filtered_count(),g_catalog_count);
         text(c,c->width-86,y+9,compact,font_small(c),UI_MUTED,UI_BG,75);
     }
-    int fy=is_tv(c)?317:222;
+    int fy=is_tv(c)?286:222;
     char section[100];
     snprintf(section,sizeof section,"Categoria: %s    |    Tappa: %s",
         cats[category],chapter_name(chapter));
@@ -209,16 +214,16 @@ static void card(UiCanvas *c,int x,int y,int w,int h,const AchievementEntry *a,b
     ui_medal(c,mx,my,radius,a->rarity,a->field,!a->executable);
     int tx=x+(tv?107:83),textmax=w-(tx-x)-12;
     text(c,tx,y+(tv?10:9),a->title,font_bold(c),UI_INK,UI_WHITE,textmax-(tv?62:49));
-    int description_y=y+(tv?40:33);
-    ui_wrap(c,tx,description_y,a->description,font_small(c),textmax,2,
-            tv?20:17,UI_MUTED,UI_WHITE);
-    int bottom=y+h-(tv?24:21);
+    int description_y=y+(tv?41:33);
+    ui_wrap(c,tx,description_y,a->description,NUNITO_REGULAR_13,textmax,2,
+            tv?18:17,UI_MUTED,UI_WHITE);
+    int bottom=y+h-(tv?27:21);
     if(!a->executable) {
         ui_round(c,tx,bottom-3,tv?118:96,tv?22:18,9,0xFFF0DE00u);
         text(c,tx+7,bottom+1,"NON ATTIVO",font_small(c),UI_WARNING,0xFFF0DE00u,tv?103:85);
     }else {
-        text(c,tx,bottom,"Da sbloccare · dati non collegati",
-             font_small(c),UI_MUTED,UI_WHITE,textmax-4);
+        text(c,tx,bottom,"Stato non disponibile",
+             NUNITO_REGULAR_13,UI_MUTED,UI_WHITE,textmax-4);
     }
     if(a->executable){
         char points[30];snprintf(points,sizeof points,"+%d",a->points);
@@ -237,9 +242,9 @@ static void catalog(UiCanvas *c){
     filters(c);
     unsigned count=filtered_count();
     int cols=col_count(c),rows=row_count(c),page_size=cards_per_page(c);
-    int x0=tv?22:17,gap=tv?13:11,top=tv?350:243;
+    int x0=tv?22:17,gap=tv?13:11,top=tv?311:243;
     int w=(c->width-x0*2-(cols-1)*gap)/cols;
-    int h=tv?96:91,vgap=tv?10:10;
+    int h=tv?109:91,vgap=tv?8:10;
     int start=(int)(selected/page_size*page_size);
     if(count==0){
         ui_round(c,x0,top,c->width-2*x0,tv?277:189,18,UI_WHITE);
