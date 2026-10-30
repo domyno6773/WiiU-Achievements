@@ -178,7 +178,7 @@ static void page_header(Display *d){
  draw_text(d,d->bold,"Profilo locale",tv?74:48,tv?12:7,tv?180:125,ink);
  if(tv)draw_text(d,d->small,"Non collegato",74,34,150,muted);
  draw_text(d,d->heavy,"Wii U Achievements",tv?465:275,tv?8:6,tv?440:345,ink);
- draw_text(d,d->small,"MONITOR NON ATTIVO",tv?1080:703,tv?22:14,tv?190:145,warn);
+ draw_text(d,d->small,tv?"MONITOR NON ATTIVO":"NON ATTIVO",tv?967:652,tv?22:14,tv?153:104,warn);
  /* console coherent status, never the Windows Cemu button */
 }
 static void banner_text(Display *d){
@@ -194,9 +194,9 @@ static void banner_text(Display *d){
  draw_text(d,d->small,"OBIETTIVI",tv?1091:729,tv?187:115,tv?170:125,cyan);
  char summary[64];
  snprintf(summary,sizeof buf,"%d regole Windows",available_count());
- draw_text(d,d->small,summary,tv?62:37,tv?242:149,tv?205:170,ink);
+ draw_text(d,d->small,summary,tv?62:37,tv?226:145,tv?205:170,ink);
  snprintf(summary,sizeof buf,"%u da verificare",g_catalog_count-available_count());
- draw_text(d,d->small,summary,tv?269:208,tv?242:149,tv?180:154,ink);
+ draw_text(d,d->small,summary,tv?269:208,tv?226:145,tv?180:154,ink);
 }
 static void tab(Display *d,const char *name,int count,int x,int y,int w,bool active,bool disabled){
  SDL_Color c=disabled?muted:(active?cyan:muted);
