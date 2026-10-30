@@ -50,7 +50,7 @@ target_include_directories(WiiUAchievementsNative PRIVATE
 target_compile_features(WiiUAchievementsNative PRIVATE c_std_11)
 target_compile_options(WiiUAchievementsNative PRIVATE -Wall -Wextra -O2)
 target_link_libraries(WiiUAchievementsNative PRIVATE
-    SDL2_image SDL2_ttf SDL2
+    SDL2_image SDL2_ttf SDL2 webp
     freetype harfbuzz png z bz2 brotlidec brotlicommon m
 )
 wut_create_rpx(WiiUAchievementsNative)
