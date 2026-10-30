@@ -5,6 +5,7 @@ on:
     branches: [wiiu-native]
     paths:
       - 'wiiu/**'
+      - '.github/workflows/wiiu-native.yml'
       - 'achievements.xml'
       - 'achievements-story.xml'
       - 'achievements-planned.xml'
