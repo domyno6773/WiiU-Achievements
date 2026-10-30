@@ -10,3 +10,6 @@ plugin/*.map
 *.o
 *.d
 .DS_Store
+
+# Rebuilt from original upstream SIL OFL Nunito TTF files
+app/src/font_nunito_generated.c
