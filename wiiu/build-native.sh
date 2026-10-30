@@ -8,6 +8,11 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p "test_*.py" -v
 
+if [[ ! -s "$SCRIPT_DIR/app/src/font_nunito_generated.c" ]]; then
+  python3 "$SCRIPT_DIR/tools/generate_font.py" --root "$REPO_DIR" \
+    --output "$SCRIPT_DIR/app/src/font_nunito_generated.c"
+fi
+
 CMAKE_TOOL="$DEVKITPRO/portlibs/wiiu/bin/powerpc-eabi-cmake"
 if [[ ! -x "$CMAKE_TOOL" ]]; then
   echo "Wii U CMake wrapper not found at $CMAKE_TOOL" >&2
