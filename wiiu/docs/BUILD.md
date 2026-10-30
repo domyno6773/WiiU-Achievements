@@ -2,8 +2,10 @@
 
 The current first milestone is a **read-only, canonical-XML-backed catalog viewer**
 and an inert companion plugin. It displays the full source catalog with status,
-rarity, points, descriptions and GamePad filters, but not the original visual
-design. No achievement unlock, save reading, overlay,
+rarity, points, descriptions and GamePad filters. The renderer now uses
+the original light Wii U palette, a code-drawn sea banner, colored rarity
+medals, white cards and cyan focus outlines, but not yet Nunito or the
+original transitions and animations. No achievement unlock, save reading, overlay,
 cloud sync, or installed-game discovery is implemented yet.
 
 ## Catalog parity tests (can run on any PC)
@@ -79,9 +81,11 @@ the upstream owner's build minutes. This is a local, explicitly invoked build.
 
 1. Copy only the app's `.wuhb` to
    `sd:/wiiu/apps/WiiUAchievementsNative.wuhb`.
-2. Launch it from the Wii U Menu; press A for the actual XML-backed catalog, Up/Down to select an
-   achievement, A for details, X to cycle status filters, Y to cycle
-   categories, and B to navigate back. X on the main screen opens info.
+2. Launch it from the Wii U Menu; press A for the XML-backed catalog, then use
+   the D-pad **up/down/left/right** to move through the two-column achievement grid.
+   A opens details, X cycles available-rule/planned filters, Y cycles categories,
+   **L/R cycles chronological chapters**, and B goes back.
+   X on the main screen opens information.
 3. Confirm text, TV/GamePad output, controls, return to menu and process exit.
 4. Do **not** install the `.wps` yet. Its lifecycle must first be compiled,
    reviewed, tested and enabled in a deliberate separate stage.
@@ -89,7 +93,9 @@ the upstream owner's build minutes. This is a local, explicitly invoked build.
 
 The WUHB icon is original placeholder art, not a Nintendo or upstream asset.
 The original UI reference is still the Windows project's `docs/UI.md` and
-`docs/screenshots/`. This initial shell is **not** a graphic parity milestone.
+`docs/screenshots/`. This is the **first visual-parity iteration**, not the finished original UI.
+The temporary bitmap font, static ocean, layout scaling and update performance
+need testing against the original screenshots and on real hardware.
 
 ## What to record
 
@@ -98,6 +104,6 @@ TV/GamePad visibility, HOME behavior, exit behavior, and any crash or error.
 Do not upload console keys, ROMs, save files, personal logs or memory dumps.
 
 The XML-backed catalog generator and validation tests are now implemented.
-The next milestone is the native rule-engine parity harness and UI rendering
-parity, followed by a safe plugin/notification smoke test — not game-memory
+The next milestone is Nunito typography and detailed UI parity, followed by a
+native rule-engine parity harness and a safe plugin/notification smoke test — not game-memory
 patching before hardware validation.
