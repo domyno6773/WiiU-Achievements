@@ -1,0 +1,44 @@
+name: Build native Wii U port (wiiu-native only)
+
+on:
+  push:
+    branches: [wiiu-native]
+    paths:
+      - 'wiiu/**'
+      - 'achievements.xml'
+      - 'achievements-story.xml'
+      - 'achievements-planned.xml'
+      - 'achievement-presentation.xml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-wiiu:
+    name: Native Wii U checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate catalog against original XML
+        run: |
+          python3 -m unittest discover -s wiiu/tests -p 'test_*.py' -v
+          python3 wiiu/tools/generate_catalog.py --root . --out /tmp/catalog_generated.c
+          gcc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Iwiiu/app/src /tmp/catalog_generated.c
+      - name: Create isolated Wii U toolchain image
+        run: docker build --file wiiu/Dockerfile --tag wiiu-achievements-builder .
+      - name: Build WUHB and inert WUPS plugin
+        run: docker run --rm -v "$PWD:/project" -w /project wiiu-achievements-builder bash wiiu/build-native.sh
+      - name: Upload first-stage Wii U app (NOT hardware-tested)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiiUAchievements-WUHB-unverified
+          path: wiiu/app/build/WiiUAchievementsNative.wuhb
+          if-no-files-found: error
+      - name: Upload plugin for review only (DO NOT INSTALL YET)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiiUAchievements-WUPS-inert-do-not-install
+          path: wiiu/plugin/WiiUAchievements.wps
+          if-no-files-found: error
