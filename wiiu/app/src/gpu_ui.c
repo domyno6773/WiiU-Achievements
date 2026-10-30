@@ -345,7 +345,8 @@ static void frame(Display *d,Uint32 ticks){
  SDL_RenderCopy(d->renderer,d->static_page,NULL,NULL);
  if(d->previous&&ticks-d->change_ms<200){
    float t=(ticks-d->change_ms)/200.0f;
-   if(t<0)t=0;if(t>1)t=1;
+   if(t<0)t=0;
+   if(t>1)t=1;
    SDL_SetTextureBlendMode(d->previous,SDL_BLENDMODE_BLEND);
    SDL_SetTextureAlphaMod(d->previous,(Uint8)(255*(1-t)));
    SDL_RenderCopy(d->renderer,d->previous,NULL,NULL);
@@ -505,9 +506,11 @@ int main(int argc,char **argv){
  int count=SDL_GetNumVideoDisplays();
  if(count<2){TTF_Quit();IMG_Quit();SDL_Quit();return 4;}
  int ready=0;
+ bool startup_ok=true;
  for(int i=0;i<2;i++){
-   if(load_display(&screens[i],i)!=0)goto cleanup;
-   ready++;
+   int result=load_display(&screens[i],i);
+   ready=i+1; /* Clean up even a partially constructed second display. */
+   if(result!=0){startup_ok=false;goto cleanup;}
  }
  {
    SDL_AudioSpec desired={0},obtained={0};
@@ -538,5 +541,5 @@ cleanup:
  if(audio_device)SDL_CloseAudioDevice(audio_device);
  for(int i=0;i<2;i++)stop_display(&screens[i]);
  TTF_Quit();IMG_Quit();SDL_Quit();
- return ready==2?0:5;
+ return startup_ok&&ready==2?0:5;
 }
