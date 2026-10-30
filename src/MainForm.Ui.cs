@@ -211,14 +211,16 @@ namespace WiiUAchievements
                 AddButton("back", Kind.Button, "Indietro", "B", sx + SheetW - 24 - ButtonWidth("Indietro", "B"), 13, CloseSheet, true, 1, 38);
                 if (cloudPage)
                 {
+                    bool signedIn = cloud != null && cloud.IsSignedIn;
+                    bool canAuthenticate = !cloudBusy && !signedIn;
                     string[] ids = { "field-project", "field-apikey", "field-email", "field-pass" };
                     string[] labels = { "Project ID Firebase", "Web API key", "Email account", "Password" };
                     TextBox[] boxes = { cloudProject, cloudApiKey, cloudEmail, cloudPassword };
-                    for (int i = 0; i < boxes.Length; i++) { var box = boxes[i]; Put(ids[i], Kind.Field, new RectangleF(sx + 24, 134 + i * 78, SheetW - 48, 40), labels[i], () => FocusField(box), !cloudBusy, 1).Box = box; }
+                    for (int i = 0; i < boxes.Length; i++) { var box = boxes[i]; Put(ids[i], Kind.Field, new RectangleF(sx + 24, 134 + i * 78, SheetW - 48, 40), labels[i], () => FocusField(box), canAuthenticate, 1).Box = box; }
                     float bw = (SheetW - 72) / 3;
-                    AddButton("cloud-signup", Kind.Button, "Registrati", null, sx + 24, 450, CloudSignUp, !cloudBusy, 1, 40, bw);
-                    AddButton("cloud-login", Kind.Button, "Accedi", null, sx + 36 + bw, 450, CloudLogin, !cloudBusy, 1, 40, bw);
-                    AddButton("cloud-logout", Kind.Button, "Esci", null, sx + 48 + bw * 2, 450, CloudLogout, !cloudBusy, 1, 40, bw);
+                    AddButton("cloud-signup", Kind.Button, "Registrati", null, sx + 24, 450, CloudSignUp, canAuthenticate, 1, 40, bw);
+                    AddButton("cloud-login", Kind.Button, "Accedi", null, sx + 36 + bw, 450, CloudLogin, canAuthenticate, 1, 40, bw);
+                    AddButton("cloud-logout", Kind.Button, "Esci", null, sx + 48 + bw * 2, 450, CloudLogout, !cloudBusy && signedIn, 1, 40, bw);
                 }
                 else
                 {
@@ -250,7 +252,7 @@ namespace WiiUAchievements
                     int height = box.PreferredHeight;
                     var device = new Rectangle((int)Math.Round((r.X + 13) * scale), (int)Math.Round(r.Y * scale + (r.Height * scale - height) / 2), (int)((r.Width - 26) * scale), height);
                     if (box.Bounds != device) box.Bounds = device;
-                    box.ReadOnly = box == cemuPath || box == player ? !FieldsEditable : cloudBusy;
+                    box.ReadOnly = box == cemuPath || box == player ? !FieldsEditable : cloudBusy || (cloud != null && cloud.IsSignedIn);
                     box.BackColor = box.ReadOnly ? Color.FromArgb(240, 243, 245) : Color.White;
                     if (!box.Visible) box.Visible = true;
                 }
@@ -933,7 +935,7 @@ namespace WiiUAchievements
                 }
                 DrawButton(g, widgets["cloud-signup"], t); DrawButton(g, widgets["cloud-login"], t); DrawButton(g, widgets["cloud-logout"], t);
                 Theme.Text(g, cloudMessage, Theme.Font(13, Weight.Bold), Theme.Muted, new RectangleF(sx, 508, cw, 60), StringAlignment.Near, StringAlignment.Near, true);
-                Theme.Text(g, "Richiede Firebase Authentication email/password e Firestore configurati. I progressi restano locali anche senza rete. Vedi docs/CLOUD.md.", Theme.Font(12, Weight.Regular), Theme.Muted, new RectangleF(sx, 578, cw, 80), StringAlignment.Near, StringAlignment.Near, true);
+                Theme.Text(g, cloud != null && cloud.IsSignedIn ? "Account connesso. I progressi si sincronizzano automaticamente. Per usare un altro account, premi Esci." : "Accedi o registrati per sincronizzare i progressi. I progressi restano locali anche senza rete.", Theme.Font(12, Weight.Regular), Theme.Muted, new RectangleF(sx, 578, cw, 80), StringAlignment.Near, StringAlignment.Near, true);
                 return;
             }
             Section(g, "COLLEGAMENTO", sx, 84);
@@ -949,6 +951,7 @@ namespace WiiUAchievements
             DrawToggle(g, widgets["sound"], "Jingle originale sintetizzato", t);
             DrawToggle(g, widgets["ambient"], "Si fermano mentre giochi in Cemu", t);
             DrawButton(g, widgets["test"], t);
+            DrawButton(g, widgets["cloud-page"], t);
 
             Section(g, "CONFIGURAZIONE SUPPORTATA", sx, 526);
             var info = new RectangleF(sx, 550, cw, 76);

@@ -1,5 +1,69 @@
 # Validation record and reproduction
 
+## Firebase deployment and visible account entry — 2026-10-30
+
+The user explicitly authorized fixing the existing backend so they can try sync.
+Published `firestore.rules` to `wiiu-achievements` with Firebase CLI after a
+successful compile/dry-run. Rereading the deployed rules confirmed the owner
+checks and executable ID whitelist; SHA256 of the validated local source:
+`BA6E169E77823D7A65B0D74A85AD459355DD8804D5F3D3E13F64887CE6361722`.
+The plugin's first deployment job reported success without changing the rules;
+that no-op was detected by rereading, then the CLI deployment actually released
+them. No billing, provider or database provisioning changes were needed.
+
+**34 Firestore emulator checks passed** with the final repository config/runner,
+Node built-ins and Java 25, demo project and loopback only. Coverage includes the
+exact desktop create-only PATCH/paginated list, ownership/anonymous isolation,
+immutable records, strict field types/key whitelist, time limits, unknown/planned
+IDs, hash format, parent role escalation, nested paths, collection-group reads
+and overwrite preconditions. The server whitelist equals all 70 executable IDs.
+`tests/test-firestore.ps1` runs these separately from game-free .NET tests.
+
+**9 real C# client checks passed** with the production `CloudSync` implementation:
+temporary email/password registration/login, upload/readback, import into a
+second empty local store, DPAPI persistence and token refresh after constructing
+a fresh client, cross-user get/list denial, anonymous denial and empty independent
+account. Six accounts and two synthetic documents across harness iterations were
+removed by their recorded exact IDs; each account lookup and collection list was
+verified empty afterward. No user's achievements or credentials were changed.
+A first workspace-local harness failed a local File.Replace before creating any
+account; isolated Temp roots passed. Harness identity construction and timestamp
+precision assertions were corrected before the successful run, without changing
+production sync. Firestore rounds below microsecond precision; local originals
+are retained and remote round-trip checks account for that precision.
+
+The user's UI trial exposed an account entry that was present in the input map
+but never painted by DrawSheet. A normal restart reproduced it, ruling out a
+stale process. Added the missing DrawButton call and a rendered-pixel regression
+before clicking the entry. The corrected entry and account page were then opened
+in the visible app with Cemu connected and the original unlock retained.
+**61 UI checks passed**, including this regression,
+minimum-size account controls, password masking and background account requests.
+Scroll median 2.13 ms / p95 6.52 ms over 80 frames. Final runtime binary is built
+in `build-check/firebase-final/`; existing settings and progress were copied
+without overwrite and verified by SHA256. The user then confirmed
+"Progressi sincronizzati" in their own app. This is separate from the nine
+network probes that used synthetic accounts. Their follow-up exposed confusing
+login buttons remaining enabled after successful authentication: connected
+sessions now disable login/signup and account edits, retain logout and explicitly
+say the account is connected. A repeated handler invocation also preserves the
+existing session. Logout restores editable controls; startup recognizes saved
+authentication without asking for another login.
+
+**298 core/cloud/native checks passed** during packaging. The 71-file manifest
+was verified and the staged source rebuilt independently. Packaging first failed
+under the sandbox Temp ACL at atomic file move; rerunning with the normal user
+permissions passed without a production code change. The package includes public
+Firebase configs/rules and the offline runner, excludes test accounts/manifests,
+credentials and all personal state. Negative schema tests use a valid executable
+ID so the schema condition, rather than an unknown ID, is exercised.
+
+The rules are a prototype for private progress isolation, not proof of legitimate
+gameplay. Review before broad distribution. No achievement ID/revision, engine,
+reader, persistence or memory access behavior changed in this follow-up.
+Historical inspection below records the deny-all backend before this deployment.
+
+
 
 ## Automatic load boundaries and Firebase account inspection — 2026-10-30
 

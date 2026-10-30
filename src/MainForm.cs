@@ -36,7 +36,7 @@ namespace WiiUAchievements
         bool autoReconnect;
         int connectionGeneration;
         readonly System.Windows.Forms.Timer connectionWatch = new System.Windows.Forms.Timer();
-        string cloudMessage = "Cloud opzionale: configura un progetto Firebase.";
+        string cloudMessage = "Accedi o registrati per sincronizzare i progressi.";
         readonly System.Windows.Forms.Timer cloudTimer = new System.Windows.Forms.Timer();
         GameSnapshot current;
         ulong guestBase;
@@ -55,6 +55,7 @@ namespace WiiUAchievements
             cloud = new CloudSync(dataRoot);
             cloudProject.Text = cloud.ProjectId ?? CloudProject.Id; cloudApiKey.Text = cloud.ApiKey ?? CloudProject.WebApiKey; cloudEmail.Text = cloud.Email ?? "";
             if (cloud.Warning != null) cloudMessage = cloud.Warning;
+            else if (cloud.IsSignedIn) cloudMessage = "Account connesso. Sincronizzazione automatica attiva.";
             cloudTimer.Interval = 30000; cloudTimer.Tick += delegate { SyncCloud(); }; cloudTimer.Start();
             rules = selectedGame.LoadRules(root);
             foreach (var a in rules) arts[a.Id] = Art.For(a, rules);
@@ -368,7 +369,7 @@ namespace WiiUAchievements
         void CloudSignUp() { AuthenticateCloud(true); }
         async void AuthenticateCloud(bool signup)
         {
-            if (cloudBusy) return;
+            if (cloudBusy || cloud.IsSignedIn) return;
             string email = cloudEmail.Text.Trim(), password = cloudPassword.Text;
             string key = cloudApiKey.Text.Trim(), project = cloudProject.Text.Trim();
             cloudPassword.Clear();

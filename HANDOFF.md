@@ -9,20 +9,26 @@ file-select/load, inventory/area and full-app restart tests passed with isolated
 progress and no retrospective awards. See `docs/AUTOMATIC-LOADS.md` for evidence
 and remaining cases; experimental achievement mappings are not re-certified.
 
-**Firebase account checked (2026-10-30):** project `wiiu-achievements`, existing
-web app, email/password enabled, Standard Native `(default)` in nam5/free tier.
-The deployed rules currently deny all reads/writes. No backend permissions were
-changed. Public SDK defaults are prefilled via `CloudProject.cs`; login tokens
-stay local/DPAPI. See `docs/CLOUD.md`. No real cloud unlock transfer is claimed.
+**Firebase enabled (2026-10-30):** existing project `wiiu-achievements`,
+email/password and Standard Native `(default)` in nam5/free tier. Private,
+owner-only immutable unlock rules are deployed and reread from the server.
+34 emulator checks and 9 real production C# client checks passed, including
+upload/download, DPAPI restart/refresh and cross-user/anonymous isolation.
+Six synthetic accounts and two documents were removed and verified absent.
+`firestore.rules`, Firebase configs and the offline rule suite are included.
+The account entry was clickable but unpainted; it is now drawn and covered by a
+rendered-pixel regression. The user confirmed "Progressi sincronizzati" in their
+own app. Connected sessions disable login/signup and account edits; logout
+restores them. See `docs/CLOUD.md` for usage and prototype limits.
 
 **Corrections (2026-10-30):** the broken account integration from `8b292ef` has
 been repaired locally. Cloud operations are serialized background tasks; actual
 unlock documents are pushed/pulled with durable retries from local progress.
 Tokens use Windows DPAPI, renew on expiry/restart and leave no credential backup.
 Account settings have a separate minimum-size page. See `docs/CLOUD.md` for
-configuration, backend requirements and limits. Backend provisioning/live auth
-and Firestore rules are NOT validated. The later automatic-load section above supersedes the earlier manual-only
-recording boundary; regression counts alone still do not identify save slots.
+configuration, backend requirements and limits. The Firebase validation above
+supersedes the earlier unprovisioned backend state. The automatic-load section
+above supersedes the earlier manual-only recording boundary; regression counts alone still do not identify save slots.
 The audit `docs/GROK-REVIEW-2026-10-29.md` describes the original broken commit,
 not the repaired working tree. IDs/revision/personal progress remain unchanged.
 
@@ -181,7 +187,7 @@ Source entry points:
 
 ## Recommended next task
 
-Use `build-check/automatic-load-final/` for the current local build. The stage/load
+Use `build-check/firebase-final/` for the current local build. The stage/load
 reader and automatic reconnect are implemented for the exact profile; see
 `docs/AUTOMATIC-LOADS.md` for real evidence and limits. Next verify death/continue,
 new game/hero mode, different save slots and late-game transitions. Do not
@@ -191,11 +197,13 @@ Continue normal progressive playtesting of the 53 experimental detectors and
 research the remaining 40 targets. Their status is independent of the new load
 boundary and none was certified by these tests.
 
-The existing Firebase project/provider/database were inspected successfully.
-Firestore currently denies every client read/write. The next backend action is
-to prepare/test scoped ownership rules and publish only if authorized; no rule
-changes or real unlock transfer have been made here. Public project defaults are
-already filled in the account page. Read `docs/CLOUD.md` before changing access.
+The existing Firebase backend is now enabled with the versioned private rules.
+34 emulator authorization checks and 9 real production-client checks passed;
+all synthetic accounts/documents were cleaned up and verified absent. Public
+project defaults are prefilled. The account navigation entry is visibly painted.
+The user confirmed their own app reports successful sync. See `docs/CLOUD.md`
+before changing schema, catalog IDs or access, and rerun
+`tests/test-firestore.ps1` for rule edits.
 
 ## What to request from the user for live work
 

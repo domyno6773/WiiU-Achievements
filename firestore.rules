@@ -1,0 +1,49 @@
+// Prototype rules for the current 70 executable Wii U Achievements objectives.
+// Leaf: users/{authenticated uid}/profiles/{64 lowercase hex SHA256}/unlocks/{known id}
+// Required/only field: utc (native timestamp, Unix epoch through server time + 5 minutes).
+// Leaf documents are immutable. Parent documents are virtual, contain no client-writable roles.
+// Historical timestamps are intentional for offline sync; this is not an anti-cheat service.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+    function validProfile(profile) { return profile.matches('^[0-9a-f]{64}$'); }
+    function validAchievement(id) {
+      return id in [
+        'collect-ballad-gales', 'collect-bottles-4', 'collect-command-melody', 'collect-earth-lyric',
+        'collect-song-passing', 'collect-songs-6', 'collect-wind-aria', 'collect-winds-requiem',
+        'explore-chart-10', 'explore-chart-25', 'explore-chart-49', 'gear-arrows-99',
+        'gear-bait-bag', 'gear-bombs', 'gear-bombs-99', 'gear-boomerang',
+        'gear-bow', 'gear-deku-leaf', 'gear-delivery-bag', 'gear-deluxe-picto',
+        'gear-elemental-arrows', 'gear-grappling-hook', 'gear-hookshot', 'gear-iron-boots',
+        'gear-magic-armor', 'gear-magic-double', 'gear-mirror-shield', 'gear-picto-box',
+        'gear-power-bracelets', 'gear-skull-hammer', 'gear-swift-sail', 'gear-wallet-max',
+        'hearts-10', 'hearts-12', 'hearts-15', 'hearts-18',
+        'hearts-20', 'hearts-4', 'hearts-5', 'hearts-6',
+        'hearts-8', 'side-grandma', 'story-din-pearl', 'story-farore-pearl',
+        'story-fortress-escape', 'story-gohdan', 'story-helmaroc', 'story-hero-shield',
+        'story-hero-sword', 'story-heros-clothes', 'story-hyrule-barrier', 'story-jalhalla',
+        'story-light-arrows', 'story-master-sword', 'story-molgera', 'story-nayru-pearl',
+        'story-sail', 'story-spoils-bag', 'story-telescope', 'story-triforce-complete',
+        'story-triforce-first', 'story-wind-waker', 'story-zelda', 'wallet-10',
+        'wallet-100', 'wallet-1000', 'wallet-200', 'wallet-2500',
+        'wallet-500', 'wallet-5000'
+      ];
+    }
+    function validUnlock(data) {
+      return data.keys().hasAll(['utc']) && data.keys().hasOnly(['utc']) &&
+        data.utc is timestamp && data.utc >= timestamp.date(1970, 1, 1) &&
+        data.utc <= request.time + duration.value(5, 'm');
+    }
+    match /users/{userId}/profiles/{profile}/unlocks/{achievementId} {
+      // Also permits the exact paginated list request used by the desktop client.
+      allow read: if isOwner(userId) && validProfile(profile);
+      allow create: if isOwner(userId) && validProfile(profile) &&
+        validAchievement(achievementId) && validUnlock(request.resource.data);
+      // No update bypass: not even the owner may change an existing UTC record.
+      allow update, delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

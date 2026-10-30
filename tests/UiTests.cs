@@ -135,8 +135,25 @@ class UiTests
     }
     static void CloudChecks(MainForm form, string output)
     {
-        Call(form, "OpenSheet"); Settle(); Click(form, "cloud-page");
+        Call(form, "OpenSheet"); Settle();
+        string settingsPreview = Path.Combine(output, "settings-cloud-entry.png");
+        form.SavePreview(settingsPreview);
+        var accountBounds = (RectangleF)Get(Widget(form, "cloud-page"), "Bounds");
+        float previewScale = (float)Get(form, "scale");
+        using (var preview = new Bitmap(settingsPreview))
+        {
+            int ink = 0;
+            for (int y = (int)((accountBounds.Top + 10) * previewScale); y < (int)((accountBounds.Bottom - 10) * previewScale); y++)
+                for (int x = (int)((accountBounds.Left + 12) * previewScale); x < (int)((accountBounds.Right - 12) * previewScale); x++)
+                {
+                    Color pixel = preview.GetPixel(x, y);
+                    if (pixel.R < 160 && pixel.G < 160 && pixel.B < 160) ink++;
+                }
+            Check(ink > 30, "Account cloud entry is visibly painted in settings before it can be clicked");
+        }
+        Click(form, "cloud-page");
         Check(((TextBox)Get(form, "cloudEmail")).Visible && !((TextBox)Get(form, "player")).Visible, "Cloud account has a separate settings page");
+        Check((bool)Get(Widget(form, "cloud-login"), "Enabled") && (bool)Get(Widget(form, "cloud-signup"), "Enabled") && !(bool)Get(Widget(form, "cloud-logout"), "Enabled"), "Signed-out account offers login/signup and disables logout");
         float scale = (float)Get(form, "scale"); form.ClientSize = new Size((int)(900 * scale), (int)(680 * scale)); Settle();
         var ids = new[] { "field-project", "field-apikey", "field-email", "field-pass", "cloud-signup", "cloud-login", "cloud-logout" };
         var boxes = ids.Select(id => (RectangleF)Get(Widget(form, id), "Bounds")).ToArray();
@@ -172,9 +189,14 @@ class UiTests
         finally { gate.Set(); }
         for (int i = 0; i < 100 && (bool)Get(form, "cloudBusy"); i++) { Application.DoEvents(); Thread.Sleep(20); }
         Check(!(bool)Get(form, "cloudBusy") && ((CloudSync)Get(form, "cloud")).IsSignedIn, "Completed account request resumes UI with authenticated status");
+        Check(!(bool)Get(Widget(form, "cloud-login"), "Enabled") && !(bool)Get(Widget(form, "cloud-signup"), "Enabled") && (bool)Get(Widget(form, "cloud-logout"), "Enabled") && ((TextBox)Get(form, "cloudEmail")).ReadOnly, "Connected account disables login/signup and edits while retaining logout");
+        string connectedMessage = (string)Get(form, "cloudMessage");
+        Call(form, "CloudLogin");
+        Check((string)Get(form, "cloudMessage") == connectedMessage && ((CloudSync)Get(form, "cloud")).IsSignedIn, "Repeated login cannot replace an already connected session");
         gate.Dispose(); entered.Dispose();
         Call(form, "CloudLogout");
         for (int i = 0; i < 100 && (bool)Get(form, "cloudBusy"); i++) { Application.DoEvents(); Thread.Sleep(20); }
+        Check((bool)Get(Widget(form, "cloud-login"), "Enabled") && !(bool)Get(Widget(form, "cloud-logout"), "Enabled") && !((TextBox)Get(form, "cloudEmail")).ReadOnly, "Logout restores editable login controls");
         Call(form, "CloseSheet"); Settle(); Call(form, "CloseSheet"); Settle();
         Check(password.TextLength == 0 && !password.Visible, "Leaving account settings clears and hides password");
         form.ClientSize = new Size((int)(1120 * scale), (int)(800 * scale));

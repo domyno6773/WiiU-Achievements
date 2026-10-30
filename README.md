@@ -1,11 +1,13 @@
 # Wii U Achievements — alpha 0.3
 
 **Caricamenti automatici (30 ottobre 2026):** la build corrente è in
-`build-check/automatic-load-final/`. Puoi collegarti anche dalla selezione file e
+`build-check/firebase-final/`. Puoi collegarti anche dalla selezione file e
 lasciare l'app attiva durante i caricamenti; attesa, ripresa e ricollegamento
 sono automatici per Cemu 2.6 / EUR v0 / cdc68acd. Vedi
 [prove e limiti](docs/AUTOMATIC-LOADS.md). Il progetto Firebase esistente è già
-preselezionato; le sue regole attuali bloccano però la sincronizzazione cloud.
+preselezionato e le regole personali sono pubblicate: sincronizzazione reale
+verificata. Premi **Collega Cemu → Impostazioni → Account cloud… → Registrati/Accedi**.
+Vedi [guida account](docs/CLOUD.md).
 
 **Revisione rarità:** bronzo, argento e oro sono assegnati esplicitamente;
 il platino è riservato al futuro trofeo conclusivo. Ordine e descrizioni sono

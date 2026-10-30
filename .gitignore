@@ -13,3 +13,6 @@ data/cloud.xml
 # Firebase tooling state and local diagnostics
 .firebase/
 firebase-debug*.log
+
+firestore-debug.log
+ui-debug.log

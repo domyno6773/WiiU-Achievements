@@ -2,10 +2,13 @@
 
 Le correzioni del 30 ottobre 2026 ripristinano build e pacchetto, proteggono le
 credenziali e completano il client cloud opzionale. Vedi `docs/CLOUD.md`.
-Il progetto Firebase è stato trovato e verificato: provider email/password
-abilitato, Firestore Native Standard presente, ma regole attuali deny-all.
-Nessun permesso backend è stato modificato. I dati pubblici del progetto sono
-precompilati nell'app. Vedi `docs/CLOUD.md`.
+Il progetto Firebase esistente è ora utilizzabile: regole personali pubblicate,
+34 test sull'emulatore e 9 verifiche del client reale superate. Gli account e i
+documenti sintetici sono stati rimossi. I dati pubblici sono precompilati; il
+pulsante Account cloud ora è anche disegnato. Build: `build-check/firebase-final/`.
+Vedi `docs/CLOUD.md`. L’utente ha confermato **Progressi sincronizzati** nella
+propria app. Lo stato connesso ora disabilita Accedi/Registrati; per cambiare
+account si usa Esci.
 Caricamenti e ricollegamenti automatici sono implementati e provati sui flussi
 descritti in `docs/AUTOMATIC-LOADS.md`. Prossime prove live: morte/continua,
 due slot diversi, nuova partita/eroe e progressioni sperimentali tardive.
