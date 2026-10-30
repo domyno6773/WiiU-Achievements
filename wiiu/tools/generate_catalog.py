@@ -191,6 +191,8 @@ def generate(repo):
              "rarity", "field", "requirement")
         ]
         parts.insert(2, c_literal(ascii_fallback(entry["title"])))
+        parts.insert(4, c_literal(ascii_fallback(entry["description"])))
+        parts.insert(10, c_literal(ascii_fallback(entry["requirement"])))
         parts.extend(str(entry[field]) for field in ("threshold", "points", "order"))
         parts.extend("1" if entry[field] else "0" for field in ("executable", "experimental"))
         out.append("    {" + ", ".join(parts) + "},")
