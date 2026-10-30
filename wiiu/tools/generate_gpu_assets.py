@@ -318,6 +318,7 @@ def main():
     p.add_argument("--root",type=Path,required=True)
     a=p.parse_args()
     dest=a.out
+    dest.mkdir(parents=True, exist_ok=True)
     build_icon(dest)
     shell(1280,720,"shell_tv",dest)
     shell(854,480,"shell_drc",dest)
