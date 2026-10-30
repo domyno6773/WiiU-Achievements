@@ -269,13 +269,23 @@ def medal(tier,kind,dest,name):
     ellipse(d,(23,19,75,71),"#F9FAFB",outline="#C0C8CE",width=2)
     ellipse(d,(27,22,71,67),"#E8ECEF",outline="#D6DBE0",width=1)
     ellipse(d,(34,25,61,35),(255,255,255,128))
-    if kind=="rupee":
-        polygon(d,[(51,26),(63,35),(62,53),(51,64),(40,53),(39,35)],
-                "#3C936F")
-        polygon(d,[(51,26),(63,35),(51,39),(39,35)],"#8CF2BD")
-        polygon(d,[(39,35),(51,39),(51,64),(40,53)],"#66D5A5")
-        polygon(d,[(63,35),(62,53),(51,64),(51,39)],"#1E7954")
-        polygon(d,[(51,33),(58,38),(51,43),(44,38)],"#C9FDE4")
+    if kind.startswith("rupee"):
+        # Identical Art.For ranking principle from the Windows app: colored
+        # faceted rupees progress green > blue > red > purple > gold > silver.
+        gem_palette={
+          "rupee":("#3C936F","#8CF2BD","#66D5A5","#1E7954","#C9FDE4"),
+          "rupee_blue":("#3069A8","#94DBFC","#54B7E7","#25519D","#DEF6FF"),
+          "rupee_red":("#A44766","#FFA5B4","#E77E94","#873F5B","#FFE0E7"),
+          "rupee_purple":("#754C96","#CBB0E8","#AC8BCB","#623C86","#EDE0FA"),
+          "rupee_gold":("#B88E42","#FFDF92","#E7BD6E","#97713F","#FFF3D8"),
+          "rupee_silver":("#8998A4","#D5E1EB","#AFC3D1","#647C8E","#F8FBFF")
+        }
+        c=gem_palette.get(kind,gem_palette["rupee"])
+        polygon(d,[(51,26),(63,35),(62,53),(51,64),(40,53),(39,35)],c[0])
+        polygon(d,[(51,26),(63,35),(51,39),(39,35)],c[1])
+        polygon(d,[(39,35),(51,39),(51,64),(40,53)],c[2])
+        polygon(d,[(63,35),(62,53),(51,64),(51,39)],c[3])
+        polygon(d,[(51,33),(58,38),(51,43),(44,38)],c[4])
     else:
         ellipse(d,(35,32,53,49),"#CBA2AC")
         ellipse(d,(49,32,67,49),"#CBA2AC")
@@ -326,7 +336,8 @@ def main():
         for focus in (False,True):
             card_template(w,h,focus,dest,"card_"+screen+("_focus" if focus else ""))
     for tier in ("bronze","silver","gold"):
-        for kind in ("rupee","heart"):
+        for kind in ("rupee","rupee_blue","rupee_red","rupee_purple",
+                     "rupee_gold","rupee_silver","heart"):
             medal(tier,kind,dest,"medal_"+tier+"_"+kind)
     # Single-file payload. .incbin embeds compressed PNGs plus original
     # upstream Nunito fonts into the .wuhb; SDL2_image decodes them to GX2.
