@@ -35,4 +35,13 @@ For every newly tested Wii U reading, record: console environment/version, game 
 
 ## Upstream synchronization policy
 
-Merge/cherry-pick upstream to `wiiu-native` only after reading the diff and checking port impact. Never push changes to `main` or open an automatic pull request into `main`. The owner can continue Windows development independently.
+Develop only on `domyno6773/WiiU-Achievements:wiiu-native`.
+The Windows source of truth is `hoffo1987/WiiU-Achievements:main`.
+
+When upstream changes, inspect its diff and merge/cherry-pick only after evaluating
+impacts on source XML, catalog generation, rule semantics and API compatibility.
+Never push changes to the upstream repository, update either `main` from the
+native port workflow, or open an automatic pull request into upstream `main`.
+The owner can continue Windows development independently.
+
+See [UPSTREAM-SYNC.md](UPSTREAM-SYNC.md) for the concrete safe process.
