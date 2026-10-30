@@ -1,69 +1,70 @@
-# Wii U Achievements — native console port (development)
+# Wii U Achievements — native Aroma port
 
-This directory belongs to the **`wiiu-native`** branch of the developer's fork,
-[domyno6773/WiiU-Achievements](https://github.com/domyno6773/WiiU-Achievements).
-The canonical upstream project is
-[hoffo1987/WiiU-Achievements](https://github.com/hoffo1987/WiiU-Achievements)
-(branch `main`). This is a port of the existing Windows application,
-**not an independent achievements product**.
+This is the **Wii U native edition of the existing Windows/Cemu project**,
+not a new achievement set or a replacement for the original owner's work.
 
-## Non-negotiable boundaries
+- **Development fork:** `domyno6773/WiiU-Achievements`, branch `wiiu-native`
+- **Canonical upstream:** `hoffo1987/WiiU-Achievements`, branch `main`
+- **Test environment:** real Wii U running Aroma
+- **Preservation rule:** NEVER push to either repository's `main`, never modify
+  upstream from native-port work.
 
-- Write Wii U-specific changes **only** to `domyno6773/WiiU-Achievements:wiiu-native`.
-- Never push to `hoffo1987/WiiU-Achievements` or to either repository's `main` from the port workflow.
-- Preserve original achievements, stable IDs, set revisions, categories, rarities, display text and progress semantics. Never silently award existing milestones.
-- Keep the original Windows `src/`, root XML and Windows scripts intact. Follow upstream changes deliberately and verify compatibility before importing them.
-- Read-only monitoring of title memory. No patches to game executable, save editing or modification of game state.
-- No proprietary Nintendo assets, system sounds, ROMs, keys, dumps or user progress in the repository.
-- Evidence from Cemu is not evidence of correct behavior on real hardware; experimental flags remain experimental.
+## Native frontend: high-fidelity renderer
 
-## Target environment
+The current app frontend is `app/src/gpu_ui.c`, implemented in C using
+**GX2-accelerated Wii U SDL2**, SDL2_image and SDL2_ttf.
 
-- Nintendo Wii U with Aroma.
-- Frontend: native `.wuhb` app visible in the Wii U Menu (via Homebrew on Menu).
-- Background monitor: WUPS `.wps` plugin loaded by Aroma.
-- Development: devkitPro/devkitPPC, wut and Wii U Plugin System; evaluate libnotifications/NotificationModule for toast delivery.
-- A shared portable achievements core and shared serialized rule identifiers, not two unrelated achievement engines.
+- Full **1280×720 TV** rendering and a separate **854×480 GamePad** layout.
+- Faithful visual structure from `docs/UI.md` and `src/MainForm.Ui.cs`:
+  white rounded achievement cards, source color palette, bright cyan focus,
+  rarity medals, layered ocean/banner, top profile/trophy bar, segmented filters,
+  and original GamePad button-style actions.
+- **Original Nunito** fonts (SIL Open Font License) from `assets/fonts/`;
+  no legacy low-resolution bitmap font in the active build.
+- Rounded cards, medals, clouds, waves and shadows are pre-rendered at 2×
+  with Pillow by `tools/generate_gpu_assets.py`, bundled into the single
+  `.wuhb` as compressed textures, then drawn using the Wii U GPU.
+- Basic animation: GPU-driven animated wave highlights, crossfade between pages
+  and short synthesized non-proprietary navigation tones.
+- Local UI: directional GamePad navigation, A select, B back, X filters,
+  Y category, L/R chapter, PLUS information.
+- No Windows-specific buttons such as "Collega Cemu" or simulated demo progress.
 
-The read-only catalog frontend is implemented in native C and generated from
-the original four XML files. The native catalog now renders the original light Wii U palette, code-drawn
-ocean banner, rarity medals, cyan cursor, white cards, and Nunito typography
-rasterized from the original SIL OFL fonts. It uses **3 columns at 1280x720 on
-TV** and **2 columns at 854x480 on GamePad**, with selectable achievement
-details, filters and chronological chapters. A reproducible host-rendered
-screenshot suite runs with the native C renderer.
+**Important:** The application is presently a **read-only catalog**. It does
+not detect installed games, inspect game memory, award achievements, show real
+unlock progress, persist unlocks or sync with Firebase. It is not supposed
+to display a fake percentage or pretend a user has unlocked anything.
 
-This is a significant visual port, **not yet pixel-identical** to the original
-WinForms UI: the animated ocean, complete medal icons/animation, progress
-engine, and full interaction parity are unfinished. It **cannot unlock**
-achievements or read your installed games/saves. The updated build still
-requires hardware performance and layout testing.
+All 110 entries, stable IDs, points, chapter, category, rarity, rule flags and
+descriptions come from the original **four XML files**. The native catalog
+generator is validated by host-side regression tests.
 
-The **first WUHB startup and catalog display have been confirmed on physical Wii U
-hardware** (2026-10-30, tester report). The GamePad controls and both individual
-outputs have not yet been independently checked. See [hardware test log](docs/HARDWARE-TESTS.md).
-**Neither the WUPS plugin, memory inspection nor in-game overlays have been validated on physical hardware.**
+### Current test evidence
 
-## Proposed source layout
+- The earlier `OSScreen` bootstrap launched on a real Wii U and displayed
+  the catalog (first-hand user report from 2026-10-30).
+- The new GX2/SDL2 interface has passed native cross-compilation on GitHub
+  Actions and host-side sprite/layout preview generation.
+- **The GX2 app is not yet hardware-validated.** Its runtime renderer performance,
+  two-window dual-screen behavior and navigation must be tested on a real Wii U
+  before it can be declared stable or visually identical at all sizes.
 
-- `app/`: Wii U native catalog, game details, settings and achievements UI.
-- `plugin/`: title lifecycle, read-only state sampler and notification dispatch.
-- `core/`: portable implementation of upstream rules, unlock state and progress I/O.
-- `graphics/`: original UI geometry, color and animation specifications adapted from the Windows project.
-- `tests/`: cross-platform contract and conformance tests against upstream fixtures.
-- `docs/`: port strategy, parity matrix, build/install instructions and real-hardware evidence.
+See [visual parity](docs/UI-PARITY.md), [native build](docs/BUILD.md),
+[hardware test plan](docs/HARDWARE-TESTS.md) and [upstream sync](docs/UPSTREAM-SYNC.md).
 
-Directories will be added as implementation begins. Avoid placeholder source files or pretend-build artifacts.
+## Code map
 
-## First deliverables
+- `app/src/gpu_ui.c`: active GX2/SDL2 frontend.
+- `tools/generate_gpu_assets.py`: source-matched textures/font embed assembly.
+- `tools/preview_gpu_ui.py`: **approximate host visual QA**, using the same
+  baked sprites/fonts/positions, not a screenshot of the Wii U GPU.
+- `tools/generate_catalog.py`: canonical XML → validated native C catalog.
+- `app/src/main.c`, `app/src/ui_canvas.*`: previous technical OSCreen renderer,
+  retained in Git history/branch for reference, **not part of active WUHB build**.
+- `plugin/`: deliberately inert WUPS bootstrap, **do not install yet**.
 
-1. Obtain a reproducible wut + WUPS toolchain and compile a minimal `.wuhb` and `.wps` independently.
-2. Generate and validate the full catalog from upstream XML (implemented), then build golden behavioral parity fixtures against `Core.cs`.
-3. Native light-theme visual pass with original Nunito (implemented; animated banner and perfect parity pending).
-4. Validate notification functionality with a **manual test toast only** before attaching to a game.
-5. Research game lifecycle, title identity and safe memory reads on a real Wii U; only then add the first live Wind Waker milestone.
+## Development guarantees
 
-Build and deployment instructions must be tested before they are marked as working.
-
-See [the native visual parity status](docs/UI-PARITY.md), [the port architecture](docs/ARCHITECTURE.md), [compatibility contract](docs/COMPATIBILITY.md),
-[hardware test log](docs/HARDWARE-TESTS.md) and [upstream sync policy](docs/UPSTREAM-SYNC.md).
+No game modifications, system-title patches, downloaded Nintendo material,
+user progress dumps, or proprietary console assets are stored in this branch.
+All Wii U-specific commits stay isolated from upstream `main`.

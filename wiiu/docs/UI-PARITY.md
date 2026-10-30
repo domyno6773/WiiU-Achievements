@@ -1,65 +1,54 @@
-# Native Wii U frontend — visual parity status
+# UI parity — original Windows versus Wii U GPU frontend
 
-Reference: `src/Theme.cs`, `src/Banner.cs`, `src/MainForm.Ui.cs`,
-`docs/UI.md` and `docs/screenshots/main.png` from the original Windows
-application. The native code derives its palette and component semantics from
-these originals; it is **a port**, not a standalone aesthetic redesign.
+**Canonical reference:** `docs/screenshots/main.png`,
+`src/MainForm.Ui.cs`, `src/Theme.cs`, `src/Banner.cs`,
+`src/Notification.cs`, `docs/UI.md`.
 
-## Implemented in the first styled native renderer
+## Implemented
 
-- Original light Wii U palette: near-white striped backdrop, cyan accent/selection
-  and ink/muted colors matching the values in `Theme.cs`.
-- White rounded content panels, catalog card geometry, colored medals for
-  bronze/silver/gold and a cyan focus outline.
-- A code-drawn, static cel-shaded ocean banner with waves/clouds/island. No Nintendo
-  assets; the original ocean is richer and animated.
-- Game catalog, overview, two-column achievements, details and information.
-- All 110 achievements from the exact four original XML files, with category,
-  chapter, rarity, title, description, points and experimental/planned status.
-- GamePad D-pad navigation; A select; B back; X status filter; Y category;
-  L/R chapter selection. TV/GamePad output is designed at 854x480 logical pixels.
+| Feature | Native Wii U status |
+| --- | --- |
+| Original theme color palette and striped system-menu background | Implemented |
+| Nunito Regular/Bold/ExtraBold, Unicode text with SDL_ttf antialiasing | Implemented |
+| Layered ocean, palm, island, cloud, wave art | Implemented as original vector-derived textures |
+| Original-like white rounded cards, medals, lock badges, shadows | Implemented; some details still simplified |
+| TV three-column and GamePad two-column layouts | Implemented |
+| Actual 110 XML catalog entries, metadata and statuses | Implemented |
+| Controller navigation, all/available/pending filters, categories, chapters | Implemented |
+| GPU crossfades, subtle animated ocean waves, soft input sound | Implemented |
+| Profile/demo semantics appropriate for console instead of Cemu | Implemented as *local, not connected* |
 
-## Not yet at parity
+## Deliberate differences / remaining work
 
-- **Nunito is now rendered on both screens**, using original SIL OFL fonts
-  supplied by the Windows project. `tools/generate_font.py` rasterizes
-  six sizes/weights at build time into native C glyph alpha maps. The source
-  catalog's original UTF-8 strings are displayed; fallback for glyphs outside
-  the covered Unicode set is '?'. Font rendering, line wrapping and text
-  baseline were checked in native-renderer screenshots.
-- TV now has three achievement columns; GamePad two. Source-inspired ring,
-  clouds/island/sea banner, tier medals, white cards, and focus accents are
-  implemented. The Windows app's animated waves, intricate gem variants, soft
-  dynamic shadows, scroll inertia, progress graphs, celebration, transitions,
-  and popup effects remain to be ported.
-- No actual completed/unlocked progress is shown. Because the native engine and
-  persistence are not implemented, the interface **must not** report 0 earned or
-  imply that the console has inspected save data.
-- No installed-title enumeration, native gameplay monitoring, cloud integration,
-  real unlock notifications or sound.
-- Text clipping and card layout are covered by host preview images generated
-  from the actual native C renderer in GitHub Actions. Performance, repaint
-  duration, display switching and legibility on a **physical Wii U** still
-  require testing. The app redraws only on input changes, not continuously.
-- The app now opens directly on the achievements catalog, more like the source
-  Windows UI; B opens the game library, and B from there exits.
+- No fabricated unlock timestamps, game snapshots or completion percentage.
+  Without the monitor engine, a ring shows **110 catalog entries**, not "0%"
+  or a fake demonstration value.
+- "Sbloccati" remains visible but disabled until the native progress store is
+  implemented; currently the UI skips that filter via X.
+- Some original frame-level hover behaviors, tile sparkle animations,
+  ocean/GDI gradients and custom art variants have not been reproduced
+  exactly yet. This first GX2 version is **not guaranteed pixel-identical**.
+- Cloud sync / account login, live progress bars, audio for genuine unlocks,
+  GX2 achievement-toasts during gameplay and gameplay memory monitoring remain
+  unimplemented. Installing the WUPS plugin is not part of UI testing.
+- Title art, medals and sea scenery are recreated from source semantics,
+  **not ripped Nintendo graphics**.
 
-## Host visual regression workflow
+## Evidence and test gate
 
-The `.github/workflows/wiiu-native.yml` job now compiles the real
-`app/src/main.c` + `app/src/ui_canvas.c` with `UI_HOST_PREVIEW` and a
-minimal framebuffer shim in `tools/host_shim.c`.
-It saves six PNG screenshots: TV / GamePad, each for game library, catalog,
-and achievement details. The screenshot images are a visual QA aid, not a
-substitute for native Wii U performance or pixel-accurate reproduction.
+The `wiiu-native` GitHub Actions workflow runs catalog regression tests,
+creates sprite assets using the original Nunito fonts and Pillow, produces
+**host-generated layout approximations** for TV and GamePad, cross-compiles the
+Wii U WUHB and inert WUPS plugin, then uploads app/artifacts.
 
-## Testing contract
+A successful cross-build or an attractive host preview **cannot prove**
+that two SDL2/GX2 windows render properly on the physical Wii U. The next
+gate is a Wii U user test confirming:
+- both TV and GamePad visible;
+- responsive navigation and filters;
+- no clipping/blank screens;
+- animation/audio without glitches;
+- HOME and B-to-exit behavior.
 
-The original XML converter tests are automatically checked during native CI.
-The current native application compiles with devkitPro/wut, but this **styled
-build requires separate testing on the real Wii U** before being labeled stable.
-
-On hardware, verify first launch and both display outputs, the full catalog,
-filters with empty results, 2-column paging and chapter navigation, details,
-return/exit behavior, and responsiveness. Report any freeze/slow repaint.
-Do not install the WUPS plugin to test this UI.
+Report any differences against the supplied Windows screenshot. Only label
+exact visual fidelity when actual screenshot comparisons support it.
