@@ -1,7 +1,11 @@
 #ifndef WIIU_ACHIEVEMENTS_UI_CANVAS_H
 #define WIIU_ACHIEVEMENTS_UI_CANVAS_H
 #include <stdint.h>
+#ifdef UI_HOST_PREVIEW
+#include "../../tools/host_shim.h"
+#else
 #include <coreinit/screen.h>
+#endif
 #include "font_nunito.h"
 
 typedef struct {
