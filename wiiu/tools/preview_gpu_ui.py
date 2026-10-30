@@ -71,7 +71,11 @@ def main():
   for i,e in enumerate(entries[:cols*rows]):
    cx=x0+(i%cols)*(cw+gap);cy=top+(i//cols)*(ch+rgap)
    put(im,opt.assets/('card_'+asset+('_focus' if i==0 else '')+'.png'),cx-9,cy-7,cw+18,ch+18)
-   tier=e['rarity'];kind='heart' if e['field']=='max_health' else 'rupee'
+   tier=e['rarity']
+   kind='heart' if e['field']=='max_health' else 'rupee'
+   if e['field']=='rupees':
+    rank=sum(1 for r in entries if r['executable'] and r['field']=='rupees' and r['threshold']<e['threshold'])
+    kind=['rupee','rupee_blue','rupee_red','rupee_purple','rupee_gold','rupee_silver'][min(rank,5)]
    put(im,opt.assets/f'medal_{tier}_{kind}.png',cx+7,cy+(ch-(81 if tv else 68))//2,81 if tv else 68,81 if tv else 68)
    d=ImageDraw.Draw(im)
    tx=cx+(97 if tv else 80);maxw=cw-(tx-cx)-14
@@ -80,7 +84,9 @@ def main():
    ft=cy+ch-(28 if tv else 25)
    label='Non attivo' if not e['executable'] else ('Regola sperimentale' if e['experimental'] else 'Da sbloccare · non monitorato')
    text(d,tx,ft,label,small,'#EC9214' if not e['executable'] else muted,maxw)
-   if e['executable']:text(d,cx+cw-41,cy+9,'+'+str(e['points']),small,'#D49727',40)
+   if e['executable']:
+    d.rounded_rectangle((tx,cy+ch-9,tx+(145 if tv else 123),cy+ch-5),radius=2,fill='#E1E9EE')
+    text(d,cx+cw-41,cy+9,'+'+str(e['points']),small,'#D49727',40)
   bx=[20,202,364,519] if tv else [16,160,294,432]
   keys=['A','B','X','Y']
   labels=['Dettagli','Giochi','Filtri','Categoria']
