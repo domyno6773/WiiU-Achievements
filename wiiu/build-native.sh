@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${DEVKITPRO:?DEVKITPRO must point to the devkitPro installation}"
 
+python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p "test_*.py" -v
+
 CMAKE_TOOL="$DEVKITPRO/portlibs/wiiu/bin/powerpc-eabi-cmake"
 if [[ ! -x "$CMAKE_TOOL" ]]; then
   echo "Wii U CMake wrapper not found at $CMAKE_TOOL" >&2
