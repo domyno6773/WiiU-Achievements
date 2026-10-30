@@ -69,6 +69,8 @@ def save(img,dest,name):
 
 def ocean(image,box):
     x,y,w,h=box
+    crop_rect=sc((x,y,x+w,y+h))
+    background=image.crop(crop_rect)
     d=ImageDraw.Draw(image)
     shadow(image,(x,y,x+w,y+h),19,blur=7,opacity=60,offset=4)
     rect(d,(x,y,x+w,y+h),"#54BDF0",20)
@@ -123,6 +125,14 @@ def ocean(image,box):
         line(d,pts,"#238D53",5)
     # rounded border
     rect(d,(x,y,x+w,y+h),None,20,outline="#8BD7FC",width=1)
+    # Clip all waves, gradients and scenery to the original rounded banner.
+    artwork=image.crop(crop_rect)
+    mask=Image.new("L",artwork.size,0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        (0,0,artwork.width-1,artwork.height-1),
+        radius=20*SCALE,fill=255)
+    background.paste(artwork,(0,0),mask)
+    image.paste(background,(crop_rect[0],crop_rect[1]))
 
 def shell(w,h,name,dest):
     tv=w>1000
