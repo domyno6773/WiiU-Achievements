@@ -54,6 +54,7 @@ static unsigned wrapped(OSScreenID s, unsigned row, const char *str, unsigned li
         unsigned len = 0;
         while (*str == ' ') ++str;
         while (len < sizeof(b) - 1 && *str && *str != '\n') b[len++] = *str++;
+        b[len] = '\0';
         if (len == sizeof(b) - 1 && *str && *str != ' ') {
             char *space = strrchr(b, ' ');
             if (space != NULL && space - b > 12) {
@@ -124,8 +125,15 @@ static void draw(OSScreenID s) {
         line(s, 9, "Catalogo generato dagli XML originali");
         snprintf(b, sizeof b, "Revisione: %s", g_catalog_revision);
         line(s, 11, b);
-        line(s, 13, "Nessun progresso viene ancora letto.");
-        line(s, 15, "Nessuna memoria dei giochi viene letta.");
+        unsigned n_active = 0, n_planned = 0;
+        for (unsigned i = 0; i < g_catalog_count; ++i) {
+            if (g_catalog[i].executable) ++n_active;
+            else ++n_planned;
+        }
+        snprintf(b, sizeof b, "%u eseguibili, %u non attivi", n_active, n_planned);
+        line(s, 12, b);
+        line(s, 14, "Nessun progresso viene ancora letto.");
+        line(s, 16, "Nessuna memoria dei giochi viene letta.");
         line(s, 25, "B: Torna al catalogo giochi");
     }
 }
