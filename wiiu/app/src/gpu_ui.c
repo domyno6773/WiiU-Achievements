@@ -244,6 +244,9 @@ static void render_card(Display *d,const AchievementEntry *e,int x,int y,bool se
            (e->experimental?"Regola sperimentale":"Da sbloccare · non monitorato"),
            tx,ft,max,!e->executable?warn:muted);
  if(e->executable){
+   /* Intentionally unfilled. Native monitor cannot claim actual progress yet.
+      Recreates the original card progress-track geometry without inventing data. */
+   rect(d,tx,y+h-9,d->width>1000?145:123,4,(SDL_Color){225,233,238,255});
    char points[24];snprintf(points,sizeof points,"+%d",e->points);
    draw_text(d,d->small,points,x+w-41,y+9,39,gold);
  }
