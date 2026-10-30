@@ -37,6 +37,31 @@ jobs:
           gcc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Iwiiu/app/src /tmp/catalog_generated.c
           python wiiu/tools/generate_font.py --root . --output wiiu/app/src/font_nunito_generated.c
           gcc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Iwiiu/app/src wiiu/app/src/font_nunito_generated.c
+      - name: Render actual native UI as host-side visual previews
+        run: |
+          gcc -std=c11 -O2 -Wall -Wextra -DUI_HOST_PREVIEW -Iwiiu/app/src -Iwiiu/tools \
+            wiiu/app/src/main.c wiiu/app/src/ui_canvas.c \
+            wiiu/app/src/font_nunito_generated.c /tmp/catalog_generated.c \
+            wiiu/tools/host_shim.c -o /tmp/wiiu-visual-preview
+          mkdir -p /tmp/wiiu-preview
+          for display in TV DRC; do
+            for page in games catalog details; do
+              /tmp/wiiu-visual-preview "$display" "$page" "/tmp/wiiu-preview/${display}-${page}.ppm"
+            done
+          done
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          for path in Path('/tmp/wiiu-preview').glob('*.ppm'):
+              Image.open(path).save(path.with_suffix('.png'))
+              path.unlink()
+          PY
+      - name: Upload UI visual QA previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiiUAchievements-Native-Screen-Previews
+          path: /tmp/wiiu-preview/*.png
+          if-no-files-found: error
       - name: Create isolated Wii U toolchain image
         run: docker build --file wiiu/Dockerfile --tag wiiu-achievements-builder .
       - name: Build WUHB and inert WUPS plugin
