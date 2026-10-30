@@ -45,7 +45,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WiiUAchievements-WUHB-unverified
-          path: wiiu/app/build/WiiUAchievementsNative.wuhb
+          path: |
+            wiiu/app/build/WiiUAchievementsNative.wuhb
+            assets/fonts/OFL.txt
           if-no-files-found: error
       - name: Upload plugin for review only (DO NOT INSTALL YET)
         uses: actions/upload-artifact@v4
