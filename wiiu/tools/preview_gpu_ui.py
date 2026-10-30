@@ -50,15 +50,15 @@ def main():
   heavy=font(opt.root,'ExtraBold',32 if tv else 22)
   text(d,74 if tv else 48,12 if tv else 7,'Profilo locale',bold,ink)
   if tv:text(d,74,34,'Non collegato',small,muted)
-  text(d,465 if tv else 275,8 if tv else 6,'Wii U Achievements',heavy,ink)
-  text(d,1080 if tv else 703,22 if tv else 14,'MONITOR NON ATTIVO',small,'#D28917')
+  text(d,484 if tv else 286,8 if tv else 6,'Wii U Achievements',heavy,ink)
+  text(d,967 if tv else 652,22 if tv else 14,'MONITOR NON ATTIVO' if tv else 'NON ATTIVO',small,'#D28917')
   text(d,49 if tv else 34,89 if tv else 60,'The Wind Waker HD',heavy,'#FFFFFF')
   text(d,49 if tv else 34,132 if tv else 92,'EUR v0 · Console Wii U',small,'#FFFFFF')
   text(d,49 if tv else 34,158 if tv else 116,'Rilevamento non ancora disponibile',bold,'#FFFFFF')
   text(d,1112 if tv else 752,146 if tv else 86,'110',heavy,ink)
   text(d,1091 if tv else 729,187 if tv else 115,'OBIETTIVI',small,accent)
-  text(d,62 if tv else 37,242 if tv else 149,'70 regole Windows',small,ink)
-  text(d,269 if tv else 208,242 if tv else 149,'40 da verificare',small,ink)
+  text(d,62 if tv else 37,226 if tv else 145,'70 regole Windows',small,ink)
+  text(d,269 if tv else 208,226 if tv else 145,'40 da verificare',small,ink)
   tab_y=288 if tv else 181
   xx=[22,157,318,502] if tv else [15,106,229,375]
   tabs=['Tutti 110','Sbloccati --','Da sbloccare 70','Da verificare 40']
@@ -81,8 +81,14 @@ def main():
    label='Non attivo' if not e['executable'] else ('Regola sperimentale' if e['experimental'] else 'Da sbloccare · non monitorato')
    text(d,tx,ft,label,small,'#EC9214' if not e['executable'] else muted,maxw)
    if e['executable']:text(d,cx+cw-41,cy+9,'+'+str(e['points']),small,'#D49727',40)
-  text(d,48 if tv else 43,h-(39 if tv else 29),
-   'A  Dettagli      B  Giochi      X  Filtri      Y  Categoria      L/R  Tappa',small,muted)
+  bx=[20,202,364,519] if tv else [16,160,294,432]
+  keys=['A','B','X','Y']
+  labels=['Dettagli','Giochi','Filtri','Categoria']
+  top=h-(51 if tv else 40)+(10 if tv else 8)
+  for xx,key,label in zip(bx,keys,labels):
+   text(d,xx+(14 if tv else 12),top,key,small,accent)
+   text(d,xx+(40 if tv else 34),top,label,small,ink)
+  text(d,898 if tv else 660,top,'L/R Tappa' if tv else 'L/R',small,muted)
   im=im.convert('RGB')
   out=opt.out/('TV-Catalog.png' if tv else 'GamePad-Catalog.png')
   im.save(out,optimize=True)
