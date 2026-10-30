@@ -58,5 +58,5 @@ wut_create_wuhb(WiiUAchievementsNative
     NAME "Wii U Achievements"
     SHORTNAME "Achievements"
     AUTHOR "Wii U Achievements contributors"
-    ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.png"
+    ICON "${VIS_DIR}/icon.png"
 )
