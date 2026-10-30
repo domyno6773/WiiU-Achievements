@@ -2,14 +2,12 @@
 #define WIIU_ACHIEVEMENTS_UI_CANVAS_H
 #include <stdint.h>
 #include <coreinit/screen.h>
+#include "font_nunito.h"
 
-/* Logical layout: 854x480. TV is 1280x720, GamePad 854x480.
- * All artwork is generated from simple geometry, as in the Windows version.
- * The temporary public-domain bitmap font is not the final Nunito renderer. */
 typedef struct {
     OSScreenID screen;
-    int numerator;
-    int denominator;
+    int width;
+    int height;
 } UiCanvas;
 
 enum {
@@ -29,18 +27,23 @@ enum {
     UI_SEA = 0x258DBD00u,
     UI_BRONZE = 0xC58C6000u,
     UI_SILVER = 0xBECBD500u,
-    UI_GOLD = 0xEBC25D00u
+    UI_GOLD = 0xEBC25D00u,
 };
 
 void ui_canvas_init(UiCanvas *ctx, OSScreenID screen);
 void ui_fill(UiCanvas *ctx, int x, int y, int w, int h, uint32_t color);
 void ui_round(UiCanvas *ctx, int x, int y, int w, int h, int radius, uint32_t color);
-void ui_border(UiCanvas *ctx, int x, int y, int w, int h, int thickness, uint32_t color);
-void ui_circle(UiCanvas *ctx, int x, int y, int radius, uint32_t color);
-void ui_text(UiCanvas *ctx, int x, int y, const char *ascii, int size, uint32_t color, int max_chars);
-int ui_wrap(UiCanvas *ctx, int x, int y, const char *ascii,
-            int max_chars, int max_lines, uint32_t color);
-void ui_backdrop(UiCanvas *ctx);
+void ui_circle(UiCanvas *ctx, int cx, int cy, int radius, uint32_t color);
+void ui_hline(UiCanvas *ctx, int x, int y, int len, uint32_t color);
+void ui_triangle(UiCanvas *ctx, int ax, int ay, int bx, int by, int cx, int cy, uint32_t color);
+int ui_text_width(const char *utf8, int face);
+void ui_text(UiCanvas *ctx, int x, int y, const char *utf8, int face,
+             uint32_t fg, uint32_t background, int max_width);
+int ui_wrap(UiCanvas *ctx, int x, int y, const char *utf8, int face,
+            int max_width, int max_lines, int line_height,
+            uint32_t fg, uint32_t background);
+void ui_background(UiCanvas *ctx);
 void ui_ocean_banner(UiCanvas *ctx, int x, int y, int w, int h);
-void ui_medal(UiCanvas *ctx, int cx, int cy, const char *rarity, int pending);
+void ui_medal(UiCanvas *ctx, int cx, int cy, int radius,
+              const char *rarity, const char *field, int pending);
 #endif
