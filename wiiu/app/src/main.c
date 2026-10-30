@@ -12,12 +12,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#ifndef UI_HOST_PREVIEW
 #include <coreinit/cache.h>
 #include <coreinit/screen.h>
 #include <coreinit/thread.h>
 #include <coreinit/time.h>
 #include <vpad/input.h>
 #include <whb/proc.h>
+#endif
 #include "catalog.h"
 #include "ui_canvas.h"
 
@@ -311,6 +313,18 @@ static void render(OSScreenID screen){
     else if(page==PAGE_DETAILS)details(&c);
     else info(&c);
 }
+#ifdef UI_HOST_PREVIEW
+int main(int argc,char **argv){
+    if(argc!=4){fprintf(stderr,"usage: preview <TV|DRC> <games|catalog|details|info> <out.ppm>\n");return 1;}
+    OSScreenID screen=strcmp(argv[1],"TV")==0?SCREEN_TV:SCREEN_DRC;
+    if(strcmp(argv[2],"catalog")==0)page=PAGE_ACHIEVEMENTS;
+    else if(strcmp(argv[2],"details")==0){page=PAGE_DETAILS;detail=filtered_at(0);}
+    else if(strcmp(argv[2],"info")==0)page=PAGE_INFO;
+    else if(strcmp(argv[2],"games")!=0)return 1;
+    render(screen);
+    return host_save_png_inputs(argv[3],screen);
+}
+#else
 static void repaint(void *tv,uint32_t ts,void *drc,uint32_t ds){
     for(int i=0;i<2;i++){
         render(SCREEN_TV);render(SCREEN_DRC);
@@ -378,3 +392,5 @@ int main(int argc,char **argv){
     OSScreenShutdown();free(drc);free(tv);WHBProcShutdown();
     return 0;
 }
+
+#endif /* UI_HOST_PREVIEW */
