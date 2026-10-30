@@ -100,9 +100,9 @@ static void header(UiCanvas *c){
     ui_circle(c,is_tv(c)?34:25,h/2, is_tv(c)?14:11,UI_ACCENT);
     text(c,is_tv(c)?27:19,h/2-(is_tv(c)?8:7),"★",font_small(c),
          UI_WHITE,UI_ACCENT,26);
-    text(c,is_tv(c)?58:46,h/2-(is_tv(c)?15:11),"Giocatore 1",
+    text(c,is_tv(c)?58:46,h/2-(is_tv(c)?15:11),"Profilo locale",
          font_bold(c),UI_INK,UI_WHITE,is_tv(c)?160:110);
-    if(is_tv(c))text(c,58,h/2+6,"Profilo console",font_small(c),UI_MUTED,UI_WHITE,180);
+    if(is_tv(c))text(c,58,h/2+6,"Non collegato",font_small(c),UI_MUTED,UI_WHITE,180);
 
     const char *name="Wii U Achievements";
     int font=font_title(c),tw=ui_text_width(name,font);
@@ -350,8 +350,8 @@ static bool input(uint32_t pressed,bool *quit){
     }else if(page==PAGE_ACHIEVEMENTS){
         unsigned count=filtered_count();
         /* Primary navigation is the GamePad 2-column grid. */
-        if(pressed&VPAD_BUTTON_LEFT){if(selected>0)selected--;}
-        else if(pressed&VPAD_BUTTON_RIGHT){if(selected+1<count)selected++;}
+        if(pressed&VPAD_BUTTON_LEFT){if(selected%2==1)selected--;}
+        else if(pressed&VPAD_BUTTON_RIGHT){if(selected%2==0&&selected+1<count)selected++;}
         else if(pressed&VPAD_BUTTON_UP){if(selected>=2)selected-=2;}
         else if(pressed&VPAD_BUTTON_DOWN){if(selected+2<count)selected+=2;}
         else if(pressed&VPAD_BUTTON_X){filter=(filter+1)%FILTER_COUNT;selected=0;}
