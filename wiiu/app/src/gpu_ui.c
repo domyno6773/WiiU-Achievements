@@ -177,7 +177,7 @@ static void page_header(Display *d){
  bool tv=d->width>1000;
  draw_text(d,d->bold,"Profilo locale",tv?74:48,tv?12:7,tv?180:125,ink);
  if(tv)draw_text(d,d->small,"Non collegato",74,34,150,muted);
- draw_text(d,d->heavy,"Wii U Achievements",tv?465:275,tv?8:6,tv?440:345,ink);
+ draw_text(d,d->heavy,"Wii U Achievements",tv?484:286,tv?8:6,tv?440:345,ink);
  draw_text(d,d->small,tv?"MONITOR NON ATTIVO":"NON ATTIVO",tv?967:652,tv?22:14,tv?153:104,warn);
  /* console coherent status, never the Windows Cemu button */
 }
@@ -240,6 +240,23 @@ static void render_card(Display *d,const AchievementEntry *e,int x,int y,bool se
    draw_text(d,d->small,points,x+w-41,y+9,39,gold);
  }
 }
+
+static void draw_footer_buttons(Display *d,const char *a,const char *b,const char *x,const char *y){
+ bool tv=d->width>1000;
+ int py=d->height-(tv?51:40)+(tv?8:6);
+ const char *actions[]={a,b,x,y};
+ const char *keys[]={"A","B","X","Y"};
+ const int xs[]={tv?20:16,tv?202:160,tv?364:294,tv?519:432};
+ const int ws[]={tv?170:137,tv?149:126,tv?143:131,tv?191:155};
+ for(int i=0;i<4;i++){
+   if(!actions[i])continue;
+   draw_text(d,d->small,keys[i],xs[i]+(tv?14:12),py+2,22,i?muted:cyan);
+   draw_text(d,d->small,actions[i],xs[i]+(tv?40:34),py+2,ws[i]-(tv?46:40),i?ink:cyan);
+ }
+ if(d->width>1000)
+    draw_text(d,d->small,"L/R  Tappa",898,py+2,300,muted);
+ else draw_text(d,d->small,"L/R",660,py+2,150,muted);
+}
 static void draw_catalog(Display *d){
  banner_text(d);
  catalog_tabs(d);
@@ -258,10 +275,7 @@ static void draw_catalog(Display *d){
  }
  if(!count)draw_text(d,d->bold,"Nessun obiettivo in questa categoria.",
                       margin+35,top+30,d->width-2*margin-60,muted);
- draw_text(d,d->small,d->width>1000?
-           "A  Dettagli      B  Giochi      X  Filtri      Y  Categoria      L/R  Tappa":
-           "A  Dettagli   B  Giochi   X/Y  Filtri   L/R  Tappa",
-           d->width>1000?48:43,d->height-(d->width>1000?39:29),d->width-60,muted);
+ draw_footer_buttons(d,"Dettagli","Giochi","Filtri","Categoria");
 }
 static void draw_games(Display *d){
  banner_text(d);
@@ -276,7 +290,7 @@ static void draw_games(Display *d){
  const AchievementEntry *ref=visible_at(0);
  if(ref)medal(d,ref,x+28,y+34,tv?112:84);
  draw_text(d,d->bold,"A  Apri obiettivi",x+(tv?180:128),y+h-66,290,cyan);
- draw_text(d,d->small,"X  Informazioni    ·    B  Esci",45,d->height-37,d->width-65,muted);
+ draw_footer_buttons(d,"Apri","Esci","Info",NULL);
 }
 static void draw_details(Display *d){
  banner_text(d);
@@ -306,7 +320,7 @@ static void draw_info(Display *d){
            42,d->width>1000?402:300,d->width-80,muted);
  draw_text(d,d->regular,"Il rilevamento e gli sblocchi in gioco non sono ancora disponibili.",
            42,d->width>1000?433:332,d->width-80,warn);
- draw_text(d,d->small,"B  Torna ai giochi",42,d->height-36,d->width-70,ink);
+ draw_footer_buttons(d,NULL,"Indietro",NULL,NULL);
 }
 static void static_render(Display *d){
  SDL_SetRenderTarget(d->renderer,d->static_page);
