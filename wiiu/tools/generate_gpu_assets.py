@@ -232,7 +232,7 @@ def main():
     assembly=["/* Generated Wii U high-fidelity assets: do not edit */",
               ".section .rodata", ".balign 4"]
     for name,path in FILES:
-        absfile=("gpu-assets/"+path.name) if path.parent==dest else path.resolve().as_posix()
+        absfile=("gpu-assets/"+path.name) if path.parent==dest else ("../../../assets/fonts/"+path.name)
         assembly+=[".global asset_"+name+"_start",
                    "asset_"+name+"_start:",
                    f'.incbin "{absfile}"',
