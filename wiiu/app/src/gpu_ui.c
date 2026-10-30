@@ -226,7 +226,7 @@ static void render_card(Display *d,const AchievementEntry *e,int x,int y,bool se
  int w=d->cardW,h=d->cardH;
  copy_tex(d,selected?d->card_focus:d->card,x-9,y-7,w+18,h+18);
  int medal_size=d->width>1000?81:68;
- medal(d,e,x+7,y+(h-medal_size)/2,medal_size,medal_size);
+ medal(d,e,x+7,y+(h-medal_size)/2,medal_size);
  int tx=x+(d->width>1000?97:80),max=w-(tx-x)-14;
  draw_text(d,d->bold,e->title,tx,y+8,max-49,ink);
  draw_wrapped(d,d->small,e->description,tx,y+(d->width>1000?34:30),
