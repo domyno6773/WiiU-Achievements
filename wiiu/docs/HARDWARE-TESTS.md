@@ -40,3 +40,16 @@ Confirm both displays, basic navigation, B/HOME exit behavior and whether text
 wraps or truncates on the GamePad. Record any discrepancies and build SHA.
 Do not install the experimental WUPS plugin until its own smoke-test plan
 and explicit test build are ready.
+
+## 2026-10-30 — new Nunito / 3-column UI (host previews only)
+
+After the first successful real-Wii-U app startup, a new native renderer was
+implemented using original licensed Nunito bitmaps, a separate TV 3-column
+layout and GamePad 2-column layout, with source-inspired game card and
+catalog screens. GitHub Actions generates visual previews using the exact
+C drawing code.
+
+**Not yet tested on a physical Wii U.** The original hardware validation
+applies only to the older read-only catalog build. Confirm rendering speed
+on the console, typography, all D-pad directions, B exit, X/Y filters, L/R
+chapters, details, TV and GamePad visibility. No WUPS plugin installation.
