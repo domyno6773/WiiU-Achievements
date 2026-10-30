@@ -43,6 +43,7 @@ typedef struct {
 } Display;
 static Display screens[2];
 static ViewState state={PAGE_CATALOG,FILT_ALL,0,0,0,NULL};
+static Page info_return=PAGE_CATALOG;
 static const char *cats[]={"Tutte","Storia","Equipaggiamento","Esplorazione",
                            "Collezioni","Secondarie","Crescita"};
 static SDL_AudioDeviceID audio_device=0;
@@ -391,14 +392,18 @@ static void move(int direction){
 }
 static bool input(uint32_t p,bool *quit){
  ViewState before=state;
- if(p&VPAD_BUTTON_B){
+ if((p&VPAD_BUTTON_PLUS)&&state.page!=PAGE_INFO){
+   info_return=state.page;
+   state.page=PAGE_INFO;
+ }else if(p&VPAD_BUTTON_B){
    if(state.page==PAGE_CATALOG)state.page=PAGE_GAMES;
    else if(state.page==PAGE_GAMES)*quit=true;
    else if(state.page==PAGE_DETAILS)state.page=PAGE_CATALOG;
+   else if(state.page==PAGE_INFO)state.page=info_return;
    else state.page=PAGE_GAMES;
  }else if(state.page==PAGE_GAMES){
    if(p&VPAD_BUTTON_A)state.page=PAGE_CATALOG;
-   else if(p&VPAD_BUTTON_X)state.page=PAGE_INFO;
+   else if(p&VPAD_BUTTON_X){info_return=PAGE_GAMES;state.page=PAGE_INFO;}
  }else if(state.page==PAGE_CATALOG){
    if(p&VPAD_BUTTON_LEFT)move(-1);
    else if(p&VPAD_BUTTON_RIGHT)move(1);
