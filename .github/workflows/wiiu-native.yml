@@ -37,39 +37,19 @@ jobs:
           gcc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Iwiiu/app/src /tmp/catalog_generated.c
           python wiiu/tools/generate_font.py --root . --output wiiu/app/src/font_nunito_generated.c
           gcc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Iwiiu/app/src wiiu/app/src/font_nunito_generated.c
-      - name: Render actual native UI as host-side visual previews
+      - name: Bake high-fidelity GPU textures and original licensed font
         run: |
-          gcc -std=c11 -O2 -Wall -Wextra -DUI_HOST_PREVIEW -Iwiiu/app/src -Iwiiu/tools \
-            wiiu/app/src/main.c wiiu/app/src/ui_canvas.c \
-            wiiu/app/src/font_nunito_generated.c /tmp/catalog_generated.c \
-            wiiu/tools/host_shim.c -o /tmp/wiiu-visual-preview
-          mkdir -p /tmp/wiiu-preview
-          for display in TV DRC; do
-            for page in games catalog details; do
-              /tmp/wiiu-visual-preview "$display" "$page" "/tmp/wiiu-preview/${display}-${page}.ppm"
-            done
-          done
-          python - <<'PY'
-          from pathlib import Path
-          from PIL import Image
-          for path in Path('/tmp/wiiu-preview').glob('*.ppm'):
-              Image.open(path).save(path.with_suffix('.png'))
-              path.unlink()
-          PY
-      - name: Upload UI visual QA previews
-        uses: actions/upload-artifact@v4
-        with:
-          name: WiiUAchievements-Native-Screen-Previews
-          path: /tmp/wiiu-preview/*.png
-          if-no-files-found: error
+          mkdir -p wiiu/app/build/gpu-assets
+          python3 wiiu/tools/generate_gpu_assets.py --root . --out wiiu/app/build/gpu-assets
+          test -s wiiu/app/build/gpu-assets/visual_assets.S
       - name: Create isolated Wii U toolchain image
         run: docker build --file wiiu/Dockerfile --tag wiiu-achievements-builder .
       - name: Build WUHB and inert WUPS plugin
         run: docker run --rm -v "$PWD:/project" -w /project wiiu-achievements-builder bash wiiu/build-native.sh
-      - name: Upload first-stage Wii U app (NOT hardware-tested)
+      - name: Upload high-fidelity GPU Wii U app (hardware QA pending)
         uses: actions/upload-artifact@v4
         with:
-          name: WiiUAchievements-WUHB-unverified
+          name: WiiUAchievements-GX2-Visual-Port
           path: |
             wiiu/app/build/WiiUAchievementsNative.wuhb
             assets/fonts/OFL.txt
