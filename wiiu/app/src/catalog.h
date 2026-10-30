@@ -8,11 +8,13 @@ typedef struct AchievementEntry {
     const char *title;             /* Original UTF-8 title */
     const char *ascii_title;       /* Temporary monospace renderer fallback */
     const char *description;       /* Original UTF-8 description */
+    const char *ascii_description; /* Monospace renderer fallback */
     const char *category;
     const char *chapter;
     const char *rarity;
     const char *field;
     const char *requirement;
+    const char *ascii_requirement; /* Monospace renderer fallback */
     int threshold;
     int points;
     int order;
