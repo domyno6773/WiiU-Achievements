@@ -311,7 +311,7 @@ static void draw_details(Display *d){
  draw_text(d,d->bold,"Descrizione",x+35,y+(tv?160:123),w-50,ink);
  draw_wrapped(d,d->regular,e->description,x+35,y+(tv?194:149),
               w-65,tv?3:2,tv?25:20,muted);
- draw_text(d,d->small,"B  Torna all'elenco",42,d->height-35,d->width-60,ink);
+ draw_footer_buttons(d,NULL,"Indietro",NULL,NULL);
 }
 static void draw_info(Display *d){
  draw_text(d,d->heavy,"Wii U Achievements",42,d->width>1000?315:218,d->width-70,ink);
