@@ -113,16 +113,21 @@ def ocean(image,box):
         line(d,pts,("#6ED0F5" if j<3 else "#8FD6F4"),1)
     # island palm tree
     ix,iy=x+w*.50,horizon-1
-    polygon(d,[(ix-57,iy),(ix-32,iy-10),(ix-10,iy-21),
-               (ix+20,iy-25),(ix+50,iy-13),(ix+69,iy)],"#72B254")
-    polygon(d,[(ix-18,iy),(ix-6,iy-9),(ix+44,iy-13),(ix+58,iy)],"#399C49")
-    line(d,[(ix+22,iy-18),(ix+26,iy-48),(ix+20,iy-61)],"#796A39",3)
-    for pts in [
-        [(ix+20,iy-61),(ix+4,iy-69),(ix-2,iy-82)],
-        [(ix+20,iy-61),(ix+30,iy-71),(ix+35,iy-86)],
-        [(ix+20,iy-61),(ix+39,iy-65),(ix+51,iy-71)],
-        [(ix+20,iy-61),(ix+15,iy-77),(ix+14,iy-82)]]:
-        line(d,pts,"#238D53",5)
+    ps=min(1.0,h/188.0)
+    def palm_point(px,py):
+        return (ix+px*ps,iy+py*ps)
+    polygon(d,[palm_point(a,b) for a,b in
+        [(-57,0),(-32,-10),(-10,-21),(20,-25),(50,-13),(69,0)]],"#72B254")
+    polygon(d,[palm_point(a,b) for a,b in
+        [(-18,0),(-6,-9),(44,-13),(58,0)]],"#399C49")
+    line(d,[palm_point(a,b) for a,b in
+       [(22,-18),(26,-48),(20,-61)]],"#796A39",max(1,round(3*ps)))
+    for branch in [
+        [(20,-61),(4,-69),(-2,-82)],
+        [(20,-61),(30,-71),(35,-86)],
+        [(20,-61),(39,-65),(51,-71)],
+        [(20,-61),(15,-77),(14,-82)]]:
+        line(d,[palm_point(a,b) for a,b in branch],"#238D53",max(2,round(5*ps)))
     # rounded border
     rect(d,(x,y,x+w,y+h),None,20,outline="#8BD7FC",width=1)
     # Clip all waves, gradients and scenery to the original rounded banner.
