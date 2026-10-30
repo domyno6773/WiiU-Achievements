@@ -1,11 +1,6 @@
-# Reproducible Wii U cross-compiler environment.
-# Versioned images match the upstream Wii U ecosystem.
-# This image is only used to build on a PC; nothing is installed on the console.
-FROM ghcr.io/wiiu-env/devkitppc:20260225
-
-COPY --from=ghcr.io/wiiu-env/wiiupluginsystem:20260418 /artifacts ${DEVKITPRO}
-
-# GPU-accelerated Wii U SDL2 backend (GX2) and PNG texture decoding.
-RUN dkp-pacman -Sy --noconfirm --needed wiiu-sdl2 wiiu-sdl2_image
-
+# Prebuilt Wii U devkitPro SDK with SDL2, SDL_image, SDL_ttf, WUT and WUPS.
+# The upstream devkitPro package host returned HTTP 403 from GitHub runners,
+# so obtain a publicly documented Wii U builder image instead of failing builds.
+# Reference: https://github.com/Happynico7504/spotify-wiiu/blob/main/.github/Dockerfile
+FROM ghcr.io/happynico7504/spotify-wiiu-builder:latest
 WORKDIR /project
