@@ -29,16 +29,17 @@ def build(font_dir):
     for weight, size in SIZES:
         font = ImageFont.truetype(str(font_dir / f"Nunito-{weight}.ttf"), size)
         glyphs = []
+        ascent, _descent = font.getmetrics()
         for point in CHARS:
             letter = chr(point)
-            mask, (left, top) = font.getmask2(letter, mode="L", anchor="lt")
+            mask, (left, top) = font.getmask2(letter, mode="L", anchor="ls")
             width, height = mask.size
             if width > 80 or height > 80:
                 raise ValueError("unexpected oversized glyph")
             advance = round(font.getlength(letter))
             offset = len(data)
             data.extend(bytes(mask))
-            glyphs.append((point, offset, width, height, left, top, advance))
+            glyphs.append((point, offset, width, height, left, top + ascent, advance))
         faces.append((weight, size, glyphs))
     return faces, data
 
